@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>港口铁水联运仿真</title>
+    <script type="text/javascript" src="jquery-3.3.1.js"></script>
+</head>
+<body>
+<!--type="radio"设置了该类型为单选模式的选择按钮，name为组件名称，value为该组件中选中每个单选框之后得到的值-->
+<!--style="position: absolute;top: 80px;left: 180px"-->
+<style>
+    .a1{
+        color: coral;
+        text-decoration: none;
+    }
+</style>
+<style>
+    .select{
+        width: 40px;
+        font-size: large;
+    }
+</style>
+<h1 align="center">装卸工艺流程和设备数量选择</h1>
+<div>
+    <p align="center" style="margin-top: 30px; color: red"><b>Tips:此页面用于选择装卸的工艺流程和设备的数量，三种流程可选择其中一种，各种可选数量设备的数量可选范围为1-7台</b></p>
+</div>
+<br>
+<table  style="border-collapse: separate;border-spacing: 0px 30px;margin-left: 5%;">
+    <tr align="center">
+        <td><input type="radio" name="tu1" value="mode1" id="i1" style="width:20px;height: 20px;"onclick="onselect()"></td>
+        <td><img src="集装箱列车.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱列车</b></td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20" ></td>
+        <td><img src="轨道式起重机1.png" alt="这是注释"  width="150" height="100"><br><b>轨道式起重机</b></td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20" ></td>
+        <td><img src="跨运车1.png" alt="这是注释"  width="150" height="100" ><br><b>跨运车</b></td>
+        <td>
+            <!--下拉框界面，id为该下拉框在获取值时需要的名称-->
+            <select class="select";name="select-test" id="select-test">
+                <!--下拉框的各个选项value为选择各选项之后的值-->
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20"  ></td>
+        <td><img src="集装箱堆场.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱堆场</b></td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20" ></td>
+        <td><img src="跨运车1.png" alt="这是注释"  width="150" height="100" ><br><b>跨运车</b></td>
+        <td>
+            <!--下拉框界面，id为该下拉框在获取值时需要的名称-->
+            <select class="select";name="select-test2" id="select-test2" >
+                <!--下拉框的各个选项value为选择各选项之后的值-->
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20"></td>
+        <td><img src="集装箱装卸桥.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱装卸桥</b></td>
+        <td>
+
+            <select class="select";name="select-test3" id="select-test3">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20"  ></td>
+        <td><img src="集装箱船舶.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱船舶</b></td>
+    </tr>
+    <tr align="center">
+        <td><input type="radio" name="tu1" value="mode2" style="width:20px;height: 20px;"></td>
+        <td><img src="集装箱列车.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱列车</b></td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20" ></td>
+        <td><img src="轨道式起重机1.png" alt="这是注释"  width="150" height="100"><br><b>轨道式起重机</b></td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20" ></td>
+        <td><img src="集卡1.png" alt="这是注释"  width="150" height="100" ><br><b>集卡</b></td>
+        <td>
+            <!--下拉框界面，id为该下拉框在获取值时需要的名称-->
+            <select class="select";name="select-test4" id="select-test4">
+                <!--下拉框的各个选项value为选择各选项之后的值-->
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20"  ></td>
+        <td><img src="集装箱堆场.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱堆场</b></td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20" ></td>
+        <td><img src="集卡1.png" alt="这是注释"  width="150" height="100" ><br><b>集卡</b></td>
+        <td>
+            <!--下拉框界面，id为该下拉框在获取值时需要的名称-->
+            <select class="select";name="select-test5" id="select-test5" >
+                <!--下拉框的各个选项value为选择各选项之后的值-->
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20"></td>
+        <td><img src="集装箱装卸桥.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱装卸桥</b></td>
+        <td>
+
+            <select class="select";name="select-test6" id="select-test6">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20"  ></td>
+        <td><img src="集装箱船舶.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱船舶</b></td>
+    </tr>
+    <tr align="center">
+        <td><input type="radio" name="tu1" value="mode3" style="width:20px;height: 20px;"></td>
+        <td><img src="集装箱列车.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱列车</b></td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20" ></td>
+        <td><img src="轨道式起重机1.png" alt="这是注释"  width="150" height="100"><br><b></b></td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20" ></td>
+        <td><img src="集卡1.png" alt="这是注释"  width="150" height="100" ><br><b>集卡</a></b></td>
+        <td>
+            <!--下拉框界面，id为该下拉框在获取值时需要的名称-->
+            <select class="select";name="select-test7" id="select-test7">
+                <!--下拉框的各个选项value为选择各选项之后的值-->
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20"  ></td>
+        <td><img src="集装箱堆场.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱堆场</b></td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20" ></td>
+        <td><img src="跨运车1.png" alt="这是注释"  width="150" height="100" ><br><b>跨运车</b></td>
+        <td>
+            <!--下拉框界面，id为该下拉框在获取值时需要的名称-->
+            <select class="select";name="select-test8" id="select-test8" >
+                <!--下拉框的各个选项value为选择各选项之后的值-->
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20"></td>
+        <td><img src="集装箱装卸桥.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱装卸桥</b></td>
+        <td>
+
+            <select class="select" ;name="select-test9" id="select-test9">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td><img src="箭头.png" alt="这是注释"  width="50" height="20"  ></td>
+        <td><img src="集装箱船舶.png" alt="这是注释"  width="150" height="100" ><br><b>集装箱船舶</b></td>
+    </tr>
+<!--跳转按钮，value为该按钮的显示名称onclick属性是当按下该按钮后将执行什么操作-->
+<input type="button" name="" value="确认选择" align="center" width="50px" length="30px" style="position: absolute;left:50% ;top:90%" onclick="mode1()"/>
+<script>
+    //按下radio后其他select不可选
+
+    /*function onselect() {
+        alert(1);
+        var a = document.getElementsByName("tu1");
+        for (var i = 0; i < a.length; i++) {
+            //检查a[i].checked看是否存在选中的单选框
+            if (a[i].checked) {
+                console.log(a[i].value);
+                //获取a[i]中的值
+                if (a[i].value == "mode1") {
+                    document.getElementsByName("select-test").disabled="disabled";
+                    $("#select-test").attr("disabled",true).css("backgroundColor","#EEEEEEE");
+                }
+            }
+        }
+    }
+
+    $("#i1").click(function(){
+        $(document).ready(function(){
+            $(".field").change(function(){
+                $(this).css("background-color","#FFFFCC");
+                $("#aaa").attr("disabled",true);
+            });
+    });*/
+
+            //按钮按下后所调用的程序
+            function mode1() {
+                //由于是一个新的技术，你可以通过下面的代码检测你的浏览器是否支持
+                if (window.localStorage) {
+                    //存储变量的值
+                    var a = document.getElementsByName("tu1");
+                    for (var i = 0; i < a.length; i++) {
+                        //检查a[i].checked看是否存在选中的单选框
+                        if (a[i].checked) {
+                            console.log(a[i].value);
+                            //获取a[i]中的值
+                            if (a[i].value == "mode1") {
+
+                                //存储变量的值
+                                var a = document.getElementById("select-test");
+                                var a2 = document.getElementById("select-test2");
+                                var a3 = document.getElementById("select-test3");
+                                //使用localStorage技术来进行对各个界面的数据传递。将a,a2,a3中的值传到kuayunche1，kuayunche2，anqiao变量中。
+                                localStorage.kuayunche1 = a.options[a.selectedIndex].value;
+                                localStorage.kuayunche2 = a2.options[a2.selectedIndex].value;
+                                localStorage.anqiao = a3.options[a3.selectedIndex].value;
+                                <!--localStorage.modelnumber = 1;-->
+                                //进行界面跳转
+                                location.href = './test.html';
+                                //alert(a[i].value);
+                                break;
+                            }
+                            if (a[i].value == "mode2") {
+                                //alert(a[i].value);
+                                //存储变量的值
+                                var a2 = document.getElementById("select-test4");
+                                var a3 = document.getElementById("select-test5");
+                                var a4 = document.getElementById("select-test6");
+
+                                //使用localStorage技术来进行对各个界面的数据传递。将a,a2,a3中的值传到kuayunche1，kuayunche2，anqiao变量中。
+                                localStorage.jika = a2.options[a2.selectedIndex].value;
+                                localStorage.jika2 = a3.options[a3.selectedIndex].value;
+                                localStorage.anqiao = a4.options[a4.selectedIndex].value;
+                                localStorage.modelnumber = 2;
+                                //进行界面跳转
+                                location.href = './test.html';
+                                break;
+                            }
+                            if (a[i].value == "mode3") {
+                                //存储变量的值
+                                var a2 = document.getElementById("select-test7");
+                                var a3 = document.getElementById("select-test8");
+                                var a4 = document.getElementById("select-test9");
+                                //使用localStorage技术来进行对各个界面的数据传递。将a,a2,a3中的值传到kuayunche1，kuayunche2，anqiao变量中。
+                                localStorage.jika = a2.options[a2.selectedIndex].value;
+                                localStorage.jika2 = a3.options[a3.selectedIndex].value;
+                                localStorage.anqiao = a4.options[a4.selectedIndex].value;
+                                localStorage.modelnumber = 3;
+                                //进行界面跳转
+                                location.href = './test.html';
+                                break;
+                            }
+                        }
+
+                    }
+                } else {
+                    alert("NOT SUPPORT");
+                }
+            }
+</script>
+</table>
+</body>
+</html>

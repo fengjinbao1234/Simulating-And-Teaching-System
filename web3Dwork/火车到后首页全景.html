@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html><head>
+        <meta charset="UTF-8">
+        <title>港口铁水联运仿真</title>
+    <script type="text/javascript" src="js/three.js"></script>
+    <script type="text/javascript" src="js/TrackballControls.js"></script>
+    <script type="text/javascript" src="util/Stats.js"></script>
+    <script type="text/javascript" src="util/dat.gui.js"></script>
+    <script type="text/javascript" src="loaders/ColladaLoader.js"></script>
+    <script type="text/javascript" src="loaders/OBJLoader.js"></script>
+    <script type="text/javascript" src="loaders/MTLLoader.js"></script>
+    <script src="https://cdn.bootcss.com/prettify/r298/lang-apollo.js"></script>
+    <script type="text/javascript" src="js/util.js"></script>
+    <script type="text/javascript" src="js/myDefined.js"></script><!--引用自定义的js来运行集卡调度策略 -->
+    <link rel="stylesheet" href="css/default.css">
+    <style type="text/css">
+            div.selectBox{display:none;position:fixed;top:30%;left:40%;width:400px;height:100px;border:3px solid black;background-color: #fdf0ff;z-index:1002}
+            div.shelter{display:none;position:fixed;top:0px;left:0px;width:100%;height:100%;background-color:black;opacity:0.6;z-index:1001}
+
+
+        </style>
+        
+        <script>
+            //货车最大数量
+            var TRUCK_MAX_NUM=10;
+            //货车任务类型
+            var YARD_TO_CRANE=1,TRAIN_TO_YARD=2;
+            //是否可放集装箱
+            var AVAILABLE=0,UNUSABLE=1;
+            var LOADED=1,UNLOADED=0;
+            //货车模型集合
+            var trucks=new Array(TRUCK_MAX_NUM);
+            //企图做一个货车调度员,存放运送堆场号和运送类型
+            // var trucksManager=new TrucksManager();
+            //存放运送堆场号和运送类型
+            var trucksTaskYardnum=new Array(TRUCK_MAX_NUM);
+            var trucksTasksType=new Array(TRUCK_MAX_NUM);
+            var trucksIsLoaded=new Array(TRUCK_MAX_NUM);
+            //启动堆场运行，运行类型
+            var startYardnum=1;
+            var startKind=undefined;
+            //集装箱纹理序号：0-2：分别对应青蓝，红，绿
+            var caseTextureNum=0;
+            //集装箱行列指示器最大号
+            var MAX_ROW_NUM=10;
+            //集装箱行列指示器图片集合
+            var ROWPIC=new Array(MAX_ROW_NUM);
+            //堆场集合
+            var yardInUse=new Array();
+            var CONTAINER={};
+            CONTAINER.LENGTH=6;
+            CONTAINER.WIDTH=6;
+            CONTAINER.HEIGHT=5;
+            var INITLOCATION=[{X:-240,Y:-60,Z:0},{X:-230,Y:-60,Z:0},{X:-220,Y:-60,Z:0},{X:-210,Y:-60,Z:0},
+                {X:-240,Y:-40,Z:0},{X:-230,Y:-40,Z:0},{X:-220,Y:-40,Z:0},{X:-210,Y:-40,Z:0}];
+            /*
+            * 货车上下左右方向定义
+            * 下：面向用户这一方向，0，-y，0
+            * 货车加载后初始方向：倒向右侧朝左，所以Y:0.5PI才能正过来朝左
+            * 加角度=绕轴逆时针旋转
+            * */
+            var DIRECTION={DOWN:{X:0.5*Math.PI,Y:0.5*Math.PI,Z:0},
+                                UP:{X:-0.5*Math.PI,Y:0.5*Math.PI,Z:0},
+                                LEFT:{X:0,Y:0.5*Math.PI,Z:0},
+                                RIGHT:{X:Math.PI,Y:0.5*Math.PI,Z:0}};
+            // var ROUTE={ T_Y1:[point[9],point[11],point[7],point[6]],
+            //              T_Y2:[point[9],point[11],point[10]],
+            //             Y1_BACK:[point[6],point[4],point[1],point[0],point[2],point[5],point[10],point[6]],
+            //             Y2_BACK:[point[10],point[3],point[6],point[4],point[1],point[0],point[2],point[5],point[10]],
+            //             Y1_T:[point[6],point[7],point[11],point[9]],
+            //             Y2_T:[point[10],point[11],point[9]]
+            // }
+            //控制界面
+            var gui;
+            //场景容器
+            var scene = new THREE.Scene();
+            function initCasePic() {
+                var one = THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/1.jpg");
+                var two = THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/2.jpg");
+                var three = THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/3.jpg");
+                var four = THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/4.jpg");
+                var five= THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/5.jpg");
+                var six= THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/6.jpg");
+                var seven= THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/7.jpg");
+                var eight= THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/8.jpg");
+                var nine= THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/9.jpg");
+                var ten= THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/10.jpg");
+                var hang= THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/hang.png");
+                var lie= THREE.ImageUtils.loadTexture("assets/textures/工作区/shuzi/lie.png");
+                ROWPIC=[one,two,three,four,five,six,seven,eight,nine,ten,hang];
+                LINEPIC=[one,two,three,four,five,six,seven,eight,nine,ten,lie];
+            }
+            function initTrucksTask() {
+                for(let i=0;i<4;i++){
+                    trucksTaskYardnum[i]=startYardnum;
+                    trucksTasksType[i]=TRAIN_TO_YARD;
+                    trucksIsLoaded[i]=UNLOADED;
+                }
+
+                for(let i=4;i<8;i++){
+                    trucksTaskYardnum[i]=startYardnum;
+                    trucksTasksType[i]=YARD_TO_CRANE;
+                    trucksIsLoaded[i]=UNLOADED;
+                }
+            }
+            function useAll() {
+                for(let i=0;i<4;i++){
+                    trucksTaskYardnum[i]=1;
+                    trucksTasksType[i]=startKind;
+                }
+
+                for(let i=4;i<8;i++){
+                    trucksTaskYardnum[i]=2;
+                    trucksTasksType[i]=startKind;
+                }
+            }
+
+        //堆场
+		function init() {
+            initCasePic();
+            initTrucksTask();
+		    // var wsp=1;
+            testYard();
+            function testYard() {
+                // addYard(0,120,70,0,-50,0);
+                //1堆场号往后加,120宽度,70高度,中心120x,25y,0z
+                addYard(1,80,80,60,10,0);
+                addYard(2,80,80,-40,10,0);
+                addYard(3,80,80,160,10,0);
+                addYard(4,80,80,-140,10,0);
+                addYard(5,80,80,60,-90,0);
+                addYard(6,80,80,-40,-90,0);
+                addYard(7,80,80,160,-90,0);
+                addYard(8,80,80,-140,-90,0);
+
+                removeYard(0);
+                removeYard(1);
+                // removeYard(2);
+            }
+            //要用到的点定义出来
+            var INLOC={x:-190,y:55,z:0};
+            var ylength=100;
+            var LEFTUP={x:INLOC.x,y:INLOC.y,z:INLOC.z};
+            var p0 = new THREE.Vector3(LEFTUP.x,LEFTUP.y,LEFTUP.z );
+            var p1 = new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+            var p2 = new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+            var p3 = new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+            var p4 = new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+
+            LEFTUP.x=INLOC.x;LEFTUP.y-=95;
+            var p10 = new THREE.Vector3(LEFTUP.x,LEFTUP.y,LEFTUP.z );
+            var p11 = new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+            var p12 = new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+            var p13= new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+            var p14= new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+
+            LEFTUP.x=INLOC.x;LEFTUP.y-=95;
+            var p20 = new THREE.Vector3(LEFTUP.x,LEFTUP.y,LEFTUP.z );
+            var p21 = new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+            var p22 = new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+            var p23= new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+            var p24= new THREE.Vector3(LEFTUP.x=LEFTUP.x+ylength,LEFTUP.y,LEFTUP.z );
+            //地图坐标点合集
+            p=[p0,p1,p2,p3,p4,
+                p10,p11,p12,p13,p14,
+                p20,p21,p22,p23,p24,];
+
+//画线（路径）
+            for(let i=0;i<p.length-5;i++){
+                drawLine(p[i],p[i+5]);
+            }
+            for(let i=0;i<p.length-1;i++){
+                drawLine(p[i],p[i+1]);
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		    var flag1=0;//吊钩运动方向指数
+            var flag2=0;//吊钩运动方向指数
+            var wn=0;
+            var wf=true;
+		    var n=0,N=3;//n是每个集卡从码头到堆场往返实时次数，N是设定的次数
+            var containerNum=21;//初始设置的集装箱数目
+		    var traincase=0;//集卡从堆场到火车托运集装箱的实时的总的数目
+
+			var stats = initStats();
+			var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0,-200,300);
+			camera.lookAt(scene.position);
+
+			var renderer = new THREE.WebGLRenderer();
+			renderer.setClearColor(new THREE.Color(0x000000));
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+            //模式选择
+            var kuayunche1;
+            var kuayunche2;
+            var jika;
+            var jika2;
+            var anqiao;
+            var modenumber = localStorage["modelnumber"];
+            if(modenumber == 1){
+                kuayunche1 = localStorage["kuayunche1"];
+                kuayunche2 = localStorage["kuayunche2"];
+                vanqiao = localStorage["anqiao"];
+            }else if (modenumber == 2) {
+                jika = localStorage["jika"];
+                jika2 = localStorage["jika2"];
+                anqiao = localStorage["anqiao"];
+            }else if(modenumber == 3){
+                jika = localStorage["jika"];
+                jika2 = localStorage["jika2"];
+                anqiao = localStorage["anqiao"];
+            }
+			// alert(jika);
+			//添加集装箱
+            var container1 = new THREE.Container();
+
+			//环境光 光源颜色
+			var light = new THREE.AmbientLight(0xffffff);
+            //light.position.set(200, 100, 5);//光源位置
+            scene.add(light);
+
+			// 添加坐标轴
+			// var axes = new THREE.AxesHelper(20);
+			// scene.add(axes);
+//新建江岸连接面
+//             var plane1,plane2,plane3;
+//             var texture=THREE.ImageUtils.loadTexture("./assets/textures/工作区/slope1.png");
+//             var plane2Geometry = new THREE.PlaneGeometry(700,49.5);
+//             var plane2Material = new THREE.MeshBasicMaterial({
+//                 color:0xF5DEB3,
+//             });
+//             plane2Material.map=texture;
+//             var plane2 = new THREE.Mesh(plane2Geometry, plane2Material);
+//             plane2.position.set(0, 103, -21);
+//             plane2.rotateX(-45);
+//             scene.add(plane2);
+            //水面
+            var textureLoader = new THREE.TextureLoader();
+            // var texture =textureLoader.load("./web3Dwork/assets/textures/工作区/ocean_1.jpg");
+            var texture=THREE.ImageUtils.loadTexture("./assets/textures/工作区/river3.png");
+            var cubeGeometry = new THREE.BoxGeometry(700,140,20);
+            var cubeMaterial = new THREE.MeshBasicMaterial({
+                // color: 0x87CEFF
+                //wireframe: true
+            });
+            cubeMaterial.map=texture;
+            // cubematerial.map.matrix .scale( gui.repeatX, gui.repeatY ); //缩放
+            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            // cube.position.set(0,165.5,-42);
+            cube.position.set(0,140,-42);
+            scene.add(cube);
+			// 纹理坐标怎么弄
+			var textureLoader = new THREE.TextureLoader();
+			var texture2 =textureLoader.load("assets/textures/工作区/railway2.jpg");
+			var texture =textureLoader.load("assets/textures/工作区/ocean_1.jpg");
+
+			// 新建一个地面的plane
+			var planeGeometry = new THREE.PlaneGeometry(700,400);
+            //纹理在material之前定义，通过修改material.map来实现纹理的加载
+			var planeMaterial = new THREE.MeshBasicMaterial({
+				color: 0xAAAAAA,
+				// map:texture
+			});
+			var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+			// 新建plane的position
+			plane.position.set(0, -110, 0);
+			scene.add(plane);
+            //添加一个停车场
+            var mesh15,mesh16,mesh17;
+            var mtlLoader15=new THREE.MTLLoader();
+            mtlLoader15.setPath('./assets/models/停车场/');
+            mtlLoader15.load('file.mtl'	,function(material){
+                material.preload();
+                var objLoader15=new THREE.OBJLoader();
+                objLoader15.setMaterials(material);
+                objLoader15.setPath('./assets/models/停车场/');
+                objLoader15.load('file.obj',function(object){
+                    mesh15=object;
+                    //模型的大小比例
+                    mesh15.scale.set(0.00375,0.025,0.00625);
+                    //模型放置的位置
+                    mesh15.position.set(-210,-70,0);
+                    //模型绕坐标轴旋转，调整方向
+                    // mesh15.rotation.y = -1.39* Math.PI;
+                    mesh15.rotation.x= 0.5* Math.PI;
+                    mesh15.rotation.y= 1* Math.PI;
+                    scene.add(mesh15);
+                });
+            });
+            var mtlLoader16=new THREE.MTLLoader();
+            mtlLoader16.setPath('./assets/models/停车场/');
+            mtlLoader16.load('file.mtl'	,function(material){
+                material.preload();
+                var objLoader16=new THREE.OBJLoader();
+                objLoader16.setMaterials(material);
+                objLoader16.setPath('./assets/models/停车场/');
+                objLoader16.load('file.obj',function(object){
+                    mesh16=object;
+                    //模型的大小比例
+                    mesh16.scale.set(0.00375,0.025,0.00625);
+                    //模型放置的位置
+                    mesh16.position.set(-210,-110,0);
+                    //模型绕坐标轴旋转，调整方向
+                    // mesh15.rotation.y = -1.39* Math.PI;
+                    mesh16.rotation.x= 0.5* Math.PI;
+                    mesh16.rotation.y= 1* Math.PI;
+                    scene.add(mesh16);
+                });
+            });
+            var mtlLoader17=new THREE.MTLLoader();
+            mtlLoader17.setPath('./assets/models/停车场/');
+            mtlLoader17.load('file.mtl'	,function(material){
+                material.preload();
+                var objLoader17=new THREE.OBJLoader();
+                objLoader17.setMaterials(material);
+                objLoader17.setPath('./assets/models/停车场/');
+                objLoader17.load('file.obj',function(object){
+                    mesh17=object;
+                    //模型的大小比例
+                    mesh17.scale.set(0.00375,0.025,0.00625);
+                    //模型放置的位置
+                    mesh17.position.set(-235,-110,0);
+                    //模型绕坐标轴旋转，调整方向
+                    // mesh15.rotation.y = -1.39* Math.PI;
+                    mesh17.rotation.x= 0.5* Math.PI;
+                    mesh17.rotation.y= 1* Math.PI;
+                    scene.add(mesh17);
+                });
+            });
+            //加载货车3D模型
+            loadTrucks(4);
+            function loadTrucks(num) {
+                var mtlLoader=[];
+                var objLoader=[];
+                for(let i=1;i<5;i++){
+                    mtlLoader[i]=new THREE.MTLLoader();
+                    mtlLoader[i].setPath('assets/models/Truck1/');
+                    mtlLoader[i].load('Truck.mtl'	,function(material){
+                        // material.preload();
+                        objLoader[i]=new THREE.OBJLoader();
+                        objLoader[i].setMaterials(material);
+                        objLoader[i].setPath('assets/models/Truck1/');
+                        objLoader[i].load('Truck.obj',function(object){
+                            trucks[i]=object;
+                            trucks[i].scale.set(0.06,0.06,0.06);
+                            // trucks[i].position.set(INITLOCATION[i].X,INITLOCATION[i].Y,INITLOCATION[i].Z);
+                            trucks[i].position.set(-206,-91+8*i,0);
+                            trucks[i].rotation.x = 0.5 * Math.PI;
+                            trucks[i].rotation.y = 0.5 * Math.PI;
+                            scene.add(trucks[i]);
+                            trucks[i].truckNum=i;
+                        });
+                    });
+                }
+            }
+            loadtrees(4);
+            function loadtrees(num) {
+                var mtlLoader=[];
+                var objLoader=[];
+                for (let i=1;i<5;i++) {
+                    var mtlLoader=new THREE.MTLLoader();
+                    mtlLoader.setPath('./assets/models/Truck1/');
+                    mtlLoader.load('Truck.mtl'	,function(material){
+                        material.preload();
+                        var objLoader=new THREE.OBJLoader();
+                        objLoader.setMaterials(material);
+                        objLoader.setPath('./assets/models/Truck1/');
+                        objLoader.load('Truck.obj',function(object){
+                            var mesh=object;
+                            //模型的大小比例
+                            mesh.scale.set(0.06,0.06,0.06);
+                            //模型放置的位置
+                            mesh.position.set(-206,-131+8*i,0);
+                            //模型绕坐标轴旋转，调整方向
+                            mesh.rotation.x= 0.5* Math.PI;
+                            mesh.rotation.y= 0.5* Math.PI;
+                            scene.add(mesh);
+                        });
+                    });
+                }
+
+            }
+            loadtreess(2);
+            function loadtreess(num) {
+                var mtlLoader=[];
+                var objLoader=[];
+                for (let i=1;i<3;i++) {
+                    var mtlLoader=new THREE.MTLLoader();
+                    mtlLoader.setPath('./assets/models/Truck1/');
+                    mtlLoader.load('Truck.mtl'	,function(material){
+                        material.preload();
+                        var objLoader=new THREE.OBJLoader();
+                        objLoader.setMaterials(material);
+                        objLoader.setPath('./assets/models/Truck1/');
+                        objLoader.load('Truck.obj',function(object){
+                            var mesh=object;
+                            //模型的大小比例
+                            mesh.scale.set(0.06,0.06,0.06);
+                            //模型放置的位置
+                            mesh.position.set(-231,-131+8*i,0);
+                            //模型绕坐标轴旋转，调整方向
+                            mesh.rotation.x= 0.5* Math.PI;
+                            mesh.rotation.y= 0.5* Math.PI;
+                            scene.add(mesh);
+                        });
+                    });
+                }
+
+            }
+            // var parkGeometry = new THREE.PlaneGeometry(45,33);
+            // var ftexture1 = THREE.ImageUtils.loadTexture("assets/textures/工作区/parking.jpg");
+            // //纹理在material之前定义，通过修改material.map来实现纹理的加载
+            // var parkMaterial = new THREE.MeshBasicMaterial({
+            //     //map:texture
+            // });
+            // parkMaterial.map=ftexture1;
+            // var park=new THREE.Mesh(parkGeometry,parkMaterial);
+            // park.position.set(-225,-45,0);
+            // scene.add(park);
+/*			//新建一个港口水面的plane
+			var planeGeometry2 = new THREE.PlaneGeometry(500,80);
+			var planeMaterial2 = new THREE.MeshBasicMaterial({
+				color: 0xffffff,
+				map:texture
+			});
+			var plane2 = new THREE.Mesh(planeGeometry2, planeMaterial2);
+
+			// 新建plane的plane
+			plane2.position.set(0, 140, 0);
+*/
+			// add the plane to the scene
+			//scene.add(plane2);
+			//添加一个铁轨的3D模型
+            var railway1;
+            var rloader1 = new THREE.ColladaLoader();
+            rloader1.load("./assets/models/railway/railway1.dae",
+                function(result){
+                    railway1=result.scene.children[0].clone();
+                    railway1.scale.set(0.4,1.1,2.0);
+                    railway1.position.set(222,-310,0);
+                    railway1.rotation.z= 0.5*Math.PI;
+                    scene.add(railway1);
+                });
+            //添加树模型
+            // var Mesh1,Mesh2,Mesh3,Mesh4,Mesh5,Mesh6,Mesh7,Mesh8,Mesh9,Mesh10,Mesh11,Mesh12,Mesh13;
+            var loader1 = new THREE.OBJLoader();
+            loader1.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh1) {
+                    loadedMesh1.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh1.rotation.x=1.5;
+                    loadedMesh1.scale.set(0.025, 0.025, 0.025);
+                    loadedMesh1.position.set(-270,80,0);
+                    scene.add(loadedMesh1);
+                });
+            var loader2 = new THREE.OBJLoader();
+            loader2.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh2) {
+                    loadedMesh2.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh2.rotation.x=1.5;
+                    loadedMesh2.scale.set(0.015, 0.015, 0.015);
+                    loadedMesh2.position.set(-270,40,0);
+                    scene.add(loadedMesh2);
+
+                });
+            var loader3 = new THREE.OBJLoader();
+            loader3.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh3) {
+                    loadedMesh3.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh3.rotation.x=1.5;
+                    loadedMesh3.scale.set(0.025, 0.025, 0.025);
+                    loadedMesh3.position.set(-270,0,0);
+                    scene.add(loadedMesh3);
+
+                });
+            var loader4 = new THREE.OBJLoader();
+            loader4.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh4) {
+                    loadedMesh4.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh4.rotation.x=1.5;
+                    loadedMesh4.scale.set(0.015, 0.015, 0.015);
+                    loadedMesh4.position.set(-270,-40,0);
+                    scene.add(loadedMesh4);
+
+                });
+            var loader5 = new THREE.OBJLoader();
+            loader5.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh5) {
+                    loadedMesh5.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh5.rotation.x=1.5;
+                    loadedMesh5.scale.set(0.025, 0.025, 0.025);
+                    loadedMesh5.position.set(-270,-115,0);
+                    scene.add(loadedMesh5);
+
+                });
+            var loader6 = new THREE.OBJLoader();
+            loader6.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh6) {
+                    loadedMesh6.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh6.rotation.x=1.5;
+                    loadedMesh6.scale.set(0.015, 0.015, 0.015);
+                    loadedMesh6.position.set(-270,-165,0);
+                    scene.add(loadedMesh6);
+
+                });
+            var loader7 = new THREE.OBJLoader();
+            loader7.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh7) {
+                    loadedMesh7.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh7.rotation.x=1.5;
+                    loadedMesh7.scale.set(0.025, 0.025, 0.025);
+                    loadedMesh7.position.set(270,-160,0);
+                    scene.add(loadedMesh7);
+
+                });
+            var loader8 = new THREE.OBJLoader();
+            loader8.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh8) {
+                    loadedMesh8.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh8.rotation.x=1.5;
+                    loadedMesh8.scale.set(0.015, 0.015, 0.015);
+                    loadedMesh8.position.set(270,-120,0);
+                    scene.add(loadedMesh8);
+
+                });
+            var loader9 = new THREE.OBJLoader();
+            loader9.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh9) {
+                    loadedMesh9.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh9.rotation.x=1.5;
+                    loadedMesh9.scale.set(0.025, 0.025, 0.025);
+                    loadedMesh9.position.set(270,-40,0);
+                    scene.add(loadedMesh9);
+
+                });
+            var loader10 = new THREE.OBJLoader();
+            loader10.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh10) {
+                    loadedMesh10.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh10.rotation.x=1.5;
+                    loadedMesh10.scale.set(0.015, 0.015, 0.015);
+                    loadedMesh10.position.set(270,0,0);
+                    scene.add(loadedMesh10);
+
+                });
+            var loader11 = new THREE.OBJLoader();
+            loader11.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh11) {
+                    loadedMesh11.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh11.rotation.x=1.5;
+                    loadedMesh11.scale.set(0.025, 0.025, 0.025);
+                    loadedMesh11.position.set(270,40,0);
+                    scene.add(loadedMesh11);
+
+                });
+            var loader12 = new THREE.OBJLoader();
+            loader12.load("./assets/models/tree/tree1.obj",
+                function (loadedMesh12) {
+                    loadedMesh12.children.forEach(function (child) {
+                        var material = new THREE.MeshLambertMaterial({color:0x006400});
+                        child.material = material;
+                        child.geometry.computeFaceNormals();
+                        child.geometry.computeVertexNormals();
+                    });
+                    loadedMesh12.rotation.x=1.5;
+                    loadedMesh12.scale.set(0.015, 0.015, 0.015);
+                    loadedMesh12.position.set(270,80,0);
+                    scene.add(loadedMesh12);
+
+                });
+            // loadtrees(7);
+            // function loadtrees(num) {
+            //     var mtlLoader=[];
+            //     var objLoader=[];
+            //     for (let i=-4;i<3;i++) {
+            //         var mtlLoader=new THREE.MTLLoader();
+            //         mtlLoader.setPath('./assets/models/tree/');
+            //         mtlLoader.load('tree1.mtl'	,function(material){
+            //             material.preload();
+            //             var objLoader=new THREE.OBJLoader();
+            //             objLoader.setMaterials(material);
+            //             objLoader.setPath('./assets/models/tree/');
+            //             objLoader.load('tree1.obj',function(object){
+            //                 var mesh=object;
+            //                 //模型的大小比例
+            //                 mesh.scale.set(0.015,0.015,0.015);
+            //                 //模型放置的位置
+            //                 var x,y,z;
+            //                 x= -270;
+            //                 y=40*i;
+            //                 z= 0;
+            //                 mesh.position.set(x,y,z);
+            //                 //模型绕坐标轴旋转，调整方向
+            //                 mesh.rotation.x= 1.5* Math.PI;
+            //                 scene.add(mesh);
+            //             });
+            //         });
+            //     }
+            //
+            // }
+
+            var light1,light2,light3,light4;
+            var light1 = new THREE.DirectionalLight(0xffffff);//光源颜色
+            light1.position.set(20, 10, 5);//光源位置
+            scene.add(light1);//光源添加到场景中
+            var light2 = new THREE.DirectionalLight(0xffffff);//光源颜色
+            light2.position.set(-20, 10, 5);//光源位置
+            scene.add(light2);//光源添加到场景中
+            // var light3 = new THREE.PointLight(0xffffff);//光源颜色
+            // light3.position.set(0,-300,10);//光源位置
+            // scene.add(light3);//光源添加到场景中
+            // var light4 = new THREE.DirectionalLight(0xffffff);//光源颜色
+            // light4.position.set(0,0,300);//光源位置
+            // scene.add(light4);//光源添加到场景中
+
+            var mesh5,mesh6,mesh7,mesh8,mesh9,mesh10,mesh11,mesh12,mesh13,mesh14;
+            var mtlLoader5=new THREE.MTLLoader();
+            mtlLoader5.setPath('./assets/models/house/');
+            mtlLoader5.load('house.mtl'	,function(material){
+                material.preload();
+                var objLoader5=new THREE.OBJLoader();
+                objLoader5.setMaterials(material);
+                objLoader5.setPath('./assets/models/house/');
+                objLoader5.load('house.obj',function(object){
+                    mesh5=object;
+                    //模型的大小比例
+                    mesh5.scale.set(0.01,0.01,0.015);
+                    //模型放置的位置
+                    mesh5.position.set(-313,-100,0);
+                    //模型绕坐标轴旋转，调整方向
+                    mesh5.rotation.z = 0.5 * Math.PI;
+                    mesh5.rotation.y = 0.5 * Math.PI;
+                    scene.add(mesh5);
+                });
+            });
+            var mtlLoader6=new THREE.MTLLoader();
+            mtlLoader6.setPath('./assets/models/house/');
+            mtlLoader6.load('house.mtl'	,function(material){
+                material.preload();
+                var objLoader6=new THREE.OBJLoader();
+                objLoader6.setMaterials(material);
+                objLoader6.setPath('./assets/models/house/');
+                objLoader6.load('house.obj',function(object){
+                    mesh6=object;
+                    //模型的大小比例
+                    mesh6.scale.set(0.01,0.01,0.015);
+                    //模型放置的位置
+                    mesh6.position.set(313,-100,0);
+                    //模型绕坐标轴旋转，调整方向
+                    mesh6.rotation.z = -0.5 * Math.PI;
+                    mesh6.rotation.y= 1.5* Math.PI;
+                    scene.add(mesh6);
+                });
+            });
+            var mtlLoader7=new THREE.MTLLoader();
+            mtlLoader7.setPath('./assets/models/fish/');
+            mtlLoader7.load('fish.mtl'	,function(material){
+                material.preload();
+                var objLoader7=new THREE.OBJLoader();
+                objLoader7.setMaterials(material);
+                objLoader7.setPath('./assets/models/fish/');
+                objLoader7.load('fish.obj',function(object){
+                    mesh7=object;
+                    //模型的大小比例
+                    mesh7.scale.set(0.075,0.075,0.075);
+                    //模型放置的位置
+                    mesh7.position.set(0,170,-42);
+                    //模型绕坐标轴旋转，调整方向
+                    mesh7.rotation.z = 1 * Math.PI;
+                    mesh7.rotation.x= -0.5* Math.PI;
+                    scene.add(mesh7);
+                });
+            });
+            var mtlLoader8=new THREE.MTLLoader();
+            mtlLoader8.setPath('./assets/models/fish/');
+            mtlLoader8.load('fish.mtl'	,function(material){
+                material.preload();
+                var objLoader8=new THREE.OBJLoader();
+                objLoader8.setMaterials(material);
+                objLoader8.setPath('./assets/models/fish/');
+                objLoader8.load('fish.obj',function(object){
+                    mesh8=object;
+                    //模型的大小比例
+                    mesh8.scale.set(0.075,0.075,0.075);
+                    //模型放置的位置
+                    mesh8.position.set(80,180,-42);
+                    //模型绕坐标轴旋转，调整方向
+                    mesh8.rotation.z = 1 * Math.PI;
+                    mesh8.rotation.x= -0.5* Math.PI;
+                    scene.add(mesh8);
+                });
+            });
+
+            var mtlLoader9=new THREE.MTLLoader();
+            mtlLoader9.setPath('./assets/models/fish/');
+            mtlLoader9.load('fish.mtl'	,function(material){
+                material.preload();
+                var objLoader9=new THREE.OBJLoader();
+                objLoader9.setMaterials(material);
+                objLoader9.setPath('./assets/models/fish/');
+                objLoader9.load('fish.obj',function(object){
+                    mesh9=object;
+                    //模型的大小比例
+                    mesh9.scale.set(0.075,0.075,0.075);
+                    //模型放置的位置
+                    mesh9.position.set(160,170,-42);
+                    //模型绕坐标轴旋转，调整方向
+                    mesh9.rotation.z = 1 * Math.PI;
+                    mesh9.rotation.x= -0.5* Math.PI;
+                    scene.add(mesh9);
+                });
+            });
+            var mtlLoader10=new THREE.MTLLoader();
+            mtlLoader10.setPath('./assets/models/fish/');
+            mtlLoader10.load('fish.mtl'	,function(material){
+                material.preload();
+                var objLoader10=new THREE.OBJLoader();
+                objLoader10.setMaterials(material);
+                objLoader10.setPath('./assets/models/fish/');
+                objLoader10.load('fish.obj',function(object){
+                    mesh10=object;
+                    //模型的大小比例
+                    mesh10.scale.set(0.075,0.075,0.075);
+                    //模型放置的位置
+                    mesh10.position.set(240,180,-42);
+                    //模型绕坐标轴旋转，调整方向
+                    mesh10.rotation.z = 1 * Math.PI;
+                    mesh10.rotation.x= -0.5* Math.PI;
+                    scene.add(mesh10);
+                });
+            });
+            //添加顶柱
+            loadcolumns(5);
+            function loadcolumns(num) {
+                var mtlLoader=[];
+                var objLoader=[];
+                for (let i=-2;i<3;i++) {
+                    var mtlLoader=new THREE.MTLLoader();
+                    mtlLoader.setPath('./assets/models/column/');
+                    mtlLoader.load('柱_02.mtl'	,function(material){
+                        material.preload();
+                        var objLoader=new THREE.OBJLoader();
+                        objLoader.setMaterials(material);
+                        objLoader.setPath('./assets/models/column/');
+                        objLoader.load('柱_02.obj',function(object){
+                            var mesh=object;
+                            //模型的大小比例
+                            mesh.scale.set(0.05,0.065,0.05);
+                            //模型放置的位置
+                            var meshMaterial = new THREE.MeshBasicMaterial({
+                                color: 0xAAAAAA,
+                            });
+                            var x,y,z;
+                            x= 160*i;
+                            y=80;
+                            z= -52;
+                            mesh.position.set(x,y,z);
+                            //模型绕坐标轴旋转，调整方向
+                            mesh.rotation.x= 0.5* Math.PI;
+                            scene.add(mesh);
+                        });
+                    });
+                }
+
+            }
+            //添加栅栏
+            var mtlLoader12=new THREE.MTLLoader();
+            mtlLoader12.setPath('./assets/models/围墙/');
+            mtlLoader12.load('file.mtl'	,function(material){
+                material.preload();
+                var objLoader12=new THREE.OBJLoader();
+                objLoader12.setMaterials(material);
+                objLoader12.setPath('./assets/models/围墙/');
+                objLoader12.load('file.obj',function(object){
+                    mesh12=object;
+                    //模型的大小比例
+                    mesh12.scale.set(0.025,0.02,0.025);
+                    //模型放置的位置
+                    mesh12.position.set(-250,-230,0);
+                    //模型绕坐标轴旋转，调整方向
+                     mesh12.rotation.y = -1.39* Math.PI;
+                    mesh12.rotation.x= 0.5* Math.PI;
+                    scene.add(mesh12);
+                });
+            });
+            var mtlLoader14=new THREE.MTLLoader();
+            mtlLoader14.setPath('./assets/models/围墙/');
+            mtlLoader14.load('file.mtl'	,function(material){
+                material.preload();
+                var objLoader14=new THREE.OBJLoader();
+                objLoader14.setMaterials(material);
+                objLoader14.setPath('./assets/models/围墙/');
+                objLoader14.load('file.obj',function(object){
+                    mesh14=object;
+                    //模型的大小比例
+                    mesh14.scale.set(0.025,0.02,0.025);
+                    //模型放置的位置
+                    mesh14.position.set(250,-230,0);
+                    //模型绕坐标轴旋转，调整方向
+                    mesh14.rotation.y = -1.39* Math.PI;
+                    mesh14.rotation.x= 0.5* Math.PI;
+                    scene.add(mesh14);
+                });
+            });
+            var mtlLoader13=new THREE.MTLLoader();
+            mtlLoader13.setTexturePath( './assets/models/door/door.obj' );
+            mtlLoader13.setPath('./assets/models/door/');
+            mtlLoader13.load('door.mtl'	,function(material){
+                material.preload();
+                console.log(material);
+                var objLoader13=new THREE.OBJLoader();
+                objLoader13.setMaterials( material );
+                objLoader13.setMaterials(material);
+                objLoader13.setPath('./assets/models/door/');
+                objLoader13.load('door.obj',function(object){
+                    mesh13=object;
+                    //模型的大小比例
+                    mesh13.scale.set(0.0072,0.008,0.00075);
+                    //模型放置的位置
+                    mesh13.position.set(335,-230,0);
+                    //模型绕坐标轴旋转，调整方向
+                    mesh13.rotation.x= 0.5* Math.PI;
+                    scene.add(mesh13);
+                    texture.needsUpdate = true;
+                });
+            });
+
+			// 新建一个集装箱模型（就是一个立方体）
+			var cubeGeometry = new THREE.BoxGeometry(16,5,5);
+			var cubeMaterial = new THREE.MeshBasicMaterial({
+				color: 0xA0522D
+				,map:texture2
+				//wireframe: true
+			});
+            // 将集装箱放到铁轨上
+			function addContainer() {
+                var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                cube.position.set(-225+(traincase-1)*18, -82.5, 4.7);
+                scene.add(cube);
+            }
+
+            function addYard(num,length,width,x,y,z){
+                var   yPoint=new THREE.Vector3(x,y,z);
+               var yard=new Yard(num,length,width,yPoint);
+                yardInUse.push(yard);
+               // scene.add(yardInUse[num].yardPlane);
+                // scene.add(yardInUse[num].indicator);
+            }
+            function removeYard(num){
+                for(let i=0;i<yardInUse.length;i++){
+                    if(num==yardInUse[i].yardNum){
+                        // scene.remove(yardInUse[i].yardPlane);
+                        // for(let i=0;i<yardInUse[num].rowIndicator.length;i++)
+                        // {
+                        //     scene.remove(yardInUse[num].rowIndicator[i]);
+                        // }
+                        for(let i=0;i<yardInUse[num].CaseList.length;i++){
+                            scene.remove(yardInUse[num].CaseList[i]);
+                        }
+                        return;
+                    }
+                }
+            }
+			// add the output of the renderer to the html element
+			document.getElementById("webgl-output").appendChild(renderer.domElement);
+
+			// //画线
+			// initLine();
+			// var point;
+			// function initLine() {
+           //
+           //      var color1 = new THREE.Color( 0xFF0000 );
+           //
+			// 	//要用到的12个点定义出来
+           //      var p1 = new THREE.Vector3(   0, 70, 0.1 );
+           //      var p2 = new THREE.Vector3( 200, 70, 0.1 );
+			// 	var p3 = new THREE.Vector3(-200, 70, 0.1 );
+			// 	var p4 = new THREE.Vector3(   0,-30, 0.1 );
+			// 	var p5 = new THREE.Vector3( 200,-30, 0.1 );
+			// 	var p6 = new THREE.Vector3(-200,-30, 0.1 );
+			// 	var p7 = new THREE.Vector3( 100,-30, 0.1 );
+			// 	var p8 = new THREE.Vector3( 100,-65, 0.1 );
+			// 	var p9 = new THREE.Vector3( 200,-65, 0.1 );
+			// 	var p10= new THREE.Vector3(-200,-65, 0.1 );
+           //      var p11= new THREE.Vector3(-100,-30, 0.1 );
+           //      var p12= new THREE.Vector3(-100,-65, 0.1 );
+           //      //将点添加到一个数组里面，方便以后和别人做的整合到一起
+			// 	point=[p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12];
+           //
+			// 	//画线（路径）
+			// 	drawLine(point[0],point[3],color1);
+			// 	drawLine(point[1],point[2],color1);
+			// 	drawLine(point[4],point[5],color1);
+			// 	drawLine(point[1],point[4],color1);
+			// 	drawLine(point[2],point[5],color1);
+			// 	drawLine(point[6],point[7],color1);
+			// 	drawLine(point[8],point[9],color1);
+           //      drawLine(point[10],point[11],color1);
+           //  }
+           //
+           // 定义一个画公路的函数
+           // way1竖向way2横向,
+            //宽度：平行于x轴的长度，高度：平行于y轴的长度
+			function drawLine(p1,p2,color){
+                var width,height,widthSeg,heightSeg,waytexture;
+                var positionX,positionY;
+			    if(p1.x==p2.x){//竖向
+                    width=12;
+                    height=Math.abs(p1.y-p2.y)-12;
+                    positionX=(p1.x);
+                    positionY=(p1.y+p2.y)/2;
+                    waytexture = THREE.ImageUtils.loadTexture("assets/textures/工作区/way_1.jpg");
+                }
+			    if(p1.y==p2.y){//横向
+
+                    // width=30;
+                    width=Math.abs(p1.x-p2.x)+12;
+                    height=12;
+                    positionX=(p1.x+p2.x)/2;
+                    positionY=p2.y;
+                    waytexture = THREE.ImageUtils.loadTexture("assets/textures/工作区/road.png");
+                }
+                var geometry = new THREE.PlaneGeometry(width,height);
+                var material = new THREE.MeshBasicMaterial({
+                });
+                material.map=waytexture;
+                var line = new THREE.Mesh(geometry, material);
+                line.position.set(positionX,positionY,0.1);
+				scene.add(line);
+            }
+            //加载公路模型
+            // var mtlLoader11=new THREE.MTLLoader();
+            // mtlLoader11.setPath('./assets/models/road/');
+            // mtlLoader11.load('road.mtl'	,function(material){
+            //     material.preload();
+            //     var objLoader11=new THREE.OBJLoader();
+            //     objLoader11.setMaterials(material);
+            //     objLoader11.setPath('./assets/models/road/');
+            //     objLoader11.load('road.obj',function(object){
+            //         mesh11=object;
+            //         //模型的大小比例
+            //         mesh11.scale.set(0.15,0.15,0.15);
+            //         //模型放置的位置
+            //         mesh11.position.set(0,0,0);
+            //         //模型绕坐标轴旋转，调整方向
+            //         // mesh11.rotation.z = -0.5 * Math.PI;
+            //         // mesh11.rotation.y= 1.5* Math.PI;
+            //         scene.add(mesh11);
+            //     });
+            // });
+
+
+
+			//集卡从堆场到码头运动，point是坐标数组，便于和大家各自做的进行整合
+            //num是指选哪一个车辆模型，yardnum是指往哪个堆场运动（1是右边堆场，2是左边堆场）
+            // startkind是指启动哪一种模式（1是从堆场到码头，2是从火车到堆场）
+			function runCar(mesh,point,num,yardnum,startkind) {
+                if (mesh && startkind == 1) {
+                    //车身运动
+                    if(mesh.position.x<point[7].x&&mesh.position.y==point[7].y&&mesh.rotation.y==Math.PI&&yardnum==1){
+                        mesh.position.x += controls.speed;
+                    }
+                    else if(mesh.position.x<point[11].x&&mesh.position.y==point[7].y&&mesh.rotation.y==Math.PI&&yardnum==2){
+                        mesh.position.x += controls.speed;
+                    }
+
+                    else if(mesh.position.x==point[7].x&&mesh.position.y<point[5].y&&mesh.rotation.y==1.5*Math.PI&&yardnum==1){
+                        mesh.position.y += controls.speed;
+                    }
+                    else if(mesh.position.x==point[11].x&&mesh.position.y<point[5].y&&mesh.rotation.y==1.5*Math.PI&&yardnum==2){
+                        mesh.position.y += controls.speed;
+                    }
+
+                    else if (mesh.position.x < point[1].x && mesh.position.y == point[5].y&&yardnum==1 && n<N) {
+                        mesh.position.x += controls.speed;
+                    }
+                    else if (mesh.position.x < point[7].x && mesh.position.y == point[5].y&&yardnum==1 && n>=N) {
+                        mesh.position.x += controls.speed;
+                    }
+                    else if (mesh.position.x < point[1].x && mesh.position.y == point[5].y&&yardnum==2 && n<N) {
+                        mesh.position.x += controls.speed;
+                    }
+                    else if (mesh.position.x < point[11].x && mesh.position.y == point[5].y&&yardnum==2 && n>=N) {
+                        mesh.position.x += controls.speed;
+                    }
+
+                    else if (mesh.position.x == point[1].x && mesh.position.y < point[0].y&&yardnum==1) {
+                        mesh.position.y += controls.speed;
+                    }
+                    else if (mesh.position.x == point[1].x && mesh.position.y < point[0].y&&yardnum==2) {
+                        mesh.position.y += controls.speed;
+                    }
+
+                    else if (mesh.position.x == point[1].x && mesh.position.y < point[0].y&&yardnum==1) {
+                        mesh.position.y += controls.speed;
+                    }
+                    else if (mesh.position.x == point[1].x && mesh.position.y < point[0].y&&yardnum==2) {
+                        mesh.position.y += controls.speed;
+                    }
+
+                    else if (mesh.position.x > point[0].x && mesh.position.y == point[0].y&&yardnum==1) {
+                        mesh.position.x -= controls.speed;
+                    }
+                    else if (mesh.position.x > point[5].x && mesh.position.y == point[0].y&&yardnum==2) {
+                        mesh.position.x -= controls.speed;
+                    }
+
+                    else if (mesh.position.x == point[0].x && mesh.position.y > point[5].y&&yardnum==1) {
+                        mesh.position.y -= controls.speed;
+                    }
+                    else if (mesh.position.x == point[5].x && mesh.position.y > point[5].y&&yardnum==2) {
+                        mesh.position.y -= controls.speed;
+                    }
+                    else if (mesh.position.x == point[7].x && mesh.position.y > point[7].y&&mesh.rotation.y==0.5*Math.PI&&yardnum==1) {
+                        mesh.position.y -= controls.speed;
+                    }
+                    else if (mesh.position.x == point[11].x && mesh.position.y > point[7].y&&mesh.rotation.y==0.5*Math.PI&&yardnum==2) {
+                        mesh.position.y -= controls.speed;
+                    }
+                    else if (mesh.position.x > point[5].x && mesh.position.y == point[7].y&&mesh.rotation.y==0&&yardnum==1) {
+                        mesh.position.x -= controls.speed;
+                    }
+                    else if (mesh.position.x > point[5].x && mesh.position.y == point[7].y&&mesh.rotation.y==0&&yardnum==2) {
+                        mesh.position.x -= controls.speed;
+                    }
+
+                    //车身旋转
+                    if(mesh.position.x==point[7].x&&mesh.position.y==point[7].y&&mesh.rotation.y==Math.PI&&yardnum==1){
+                        mesh.rotation.y += 0.5 * Math.PI;
+                    }
+                    else if(mesh.position.x==point[11].x&&mesh.position.y==point[7].y&&mesh.rotation.y==Math.PI&&yardnum==2){
+                        mesh.rotation.y += 0.5 * Math.PI;
+                    }
+                    else if(mesh.position.x==point[7].x&&mesh.position.y==point[5].y&&mesh.rotation.y==1.5*Math.PI&&yardnum==1){
+                        mesh.rotation.y -= 0.5 * Math.PI;
+                    }
+                    else if(mesh.position.x==point[11].x&&mesh.position.y==point[5].y&&mesh.rotation.y==1.5*Math.PI&&yardnum==2){
+                        mesh.rotation.y -= 0.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[1].x && mesh.position.y == point[5].y && yardnum == 1) {
+                        mesh.rotation.y += 0.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[1].x && mesh.position.y == point[5].y && yardnum == 2) {
+                        mesh.rotation.y += 0.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[1].x && mesh.position.y == point[0].y && yardnum == 1) {
+                        if(num==1){
+                            n++;//n为全局变量，只在稍微落后的车里即num为1的车里更新，来控制4辆车都转N圈
+                        }
+                        mesh.rotation.y -= 1.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[1].x && mesh.position.y == point[0].y && yardnum == 2) {
+                        mesh.rotation.y -= 1.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[0].x && mesh.position.y == point[0].y && yardnum == 1) {
+                        mesh.rotation.y += 0.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[5].x && mesh.position.y == point[0].y && yardnum == 2) {
+                        mesh.rotation.y += 0.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[0].x && mesh.position.y == point[5].y && yardnum == 1) {
+                        mesh.rotation.y += 0.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[5].x && mesh.position.y == point[5].y && yardnum == 2) {
+                        mesh.rotation.y += 0.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[7].x && mesh.position.y == point[5].y && yardnum == 1 &&n>=N) {
+                        mesh.rotation.y -= 0.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[11].x && mesh.position.y == point[5].y && yardnum == 2 &&n>=N) {
+                        mesh.rotation.y -= 0.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[7].x && mesh.position.y == point[7].y &&mesh.rotation.y == 0.5 * Math.PI&& yardnum == 1) {
+                        mesh.rotation.y -= 0.5 * Math.PI;
+                    }
+                    else if (mesh.position.x == point[11].x && mesh.position.y == point[7].y &&mesh.rotation.y == 0.5 * Math.PI&& yardnum == 2) {
+                        mesh.rotation.y -= 0.5 * Math.PI;
+                    }
+                    //卡车模型复位
+                    else if(mesh.position.x==-195&&mesh.position.y==-65&&(n>=N)) {
+                        resetLocation(mesh);
+                    }
+                }
+            }
+            function resetLocation(truck){
+                // mesh.rotation.x = 0.5 * Math.PI;
+                // mesh.rotation.y = 0.5 * Math.PI;
+                // mesh.position.set(-240, -60, 0);
+			    for(let i=0;i<TRUCK_MAX_NUM;i++){
+			        if(truck.truckNum==i){
+			            truck.position.x=INITLOCATION[i].X;
+                        truck.position.y=INITLOCATION[i].Y;
+                        truck.position.z=INITLOCATION[i].Z;
+                        truck.rotation.x=DIRECTION.DOWN.X;
+                        truck.rotation.y=DIRECTION.DOWN.Y;
+                        truck.rotation.z=DIRECTION.DOWN.Z;
+                    }
+                }
+            }
+            //集卡从火车到堆场
+            function runToTrain(mesh,num,yardnum,startkind){
+			    if(mesh&&startkind==2){
+                    //车身运动
+                    //从堆场到火车往返运动控制，只有当traincase（实时运送集装箱总数目）大于
+                    // containerNum（初始设置集装箱数目）时，卡车停止往返运动
+                    if(mesh.position.x==point[7].x&&mesh.position.y>point[7].y&&mesh.rotation.y==0.5*Math.PI&&yardnum==1){
+                        mesh.position.y -= controls.speed;
+                    }
+                    else if(mesh.position.x==point[7].x&&mesh.position.y<point[5].y&&mesh.rotation.y==1.5*Math.PI&&yardnum==1){
+                        mesh.position.y += controls.speed;
+                    }
+                    else if(mesh.position.x==point[11].x&&mesh.position.y>point[7].y&&mesh.rotation.y==0.5*Math.PI&&yardnum==2){
+                        mesh.position.y -= controls.speed;
+                    }
+                    else if(mesh.position.x==point[11].x&&mesh.position.y<point[5].y&&mesh.rotation.y==1.5*Math.PI&&yardnum==2){
+                        mesh.position.y += controls.speed;
+                    }
+                    else if(mesh.position.x>point[5].x&&mesh.position.y==point[7].y&&mesh.rotation.y==0&&yardnum==1){
+                        mesh.position.x -= controls.speed;
+                    }
+                    else if(mesh.position.x<point[7].x&&mesh.position.y==point[7].y&&mesh.rotation.y==Math.PI&&yardnum==1){
+                        mesh.position.x += controls.speed;
+                    }
+                    else if(mesh.position.x>point[5].x&&mesh.position.y==point[7].y&&mesh.rotation.y==0&&yardnum==2){
+                        mesh.position.x -= controls.speed;
+                    }
+                    else if(mesh.position.x<point[11].x&&mesh.position.y==point[7].y&&mesh.rotation.y==Math.PI&&yardnum==2){
+                        mesh.position.x += controls.speed;
+                    }
+
+                    //车身旋转
+                    if(mesh.position.x==point[5].x&&mesh.position.y==point[7].y){
+                        mesh.rotation.y += Math.PI;
+                        traincase++;
+                    }
+                    else if(mesh.position.x==point[7].x&&mesh.position.y==point[7].y&&mesh.rotation.y==0.5*Math.PI&&yardnum==1){
+                        mesh.rotation.y -= 0.5 * Math.PI;
+                    }
+                    else if(mesh.position.x==point[11].x&&mesh.position.y==point[7].y&&mesh.rotation.y==0.5*Math.PI&&yardnum==2){
+                        mesh.rotation.y -= 0.5 * Math.PI;
+                    }
+                    else if(mesh.position.x==point[7].x&&mesh.position.y==point[7].y&&mesh.rotation.y==Math.PI&&yardnum==1){
+                        mesh.rotation.y += 0.5 * Math.PI;
+                    }
+                    else if(mesh.position.x==point[11].x&&mesh.position.y==point[7].y&&mesh.rotation.y==Math.PI&&yardnum==2){
+                        mesh.rotation.y += 0.5 * Math.PI;
+                    }
+                    //从堆场到火车往返运动控制，只有当traincase（实时运送集装箱总数目）大于
+                    // containerNum（初始设置集装箱数目）时，卡车停止往返运动
+                    else if(mesh.position.x==point[7].x&&mesh.position.y==point[5].y&&mesh.rotation.y==1.5*Math.PI&&yardnum==1){
+                        mesh.rotation.y -= Math.PI;
+                    }
+
+                    else if(mesh.position.x==point[11].x&&mesh.position.y==point[5].y&&mesh.rotation.y==1.5*Math.PI&&yardnum==2){
+                        mesh.rotation.y -= Math.PI;
+                    }
+
+                    //卡车模型复位
+                    else if(mesh.position.x==-195&&mesh.position.y==-65&&(traincase>containerNum)) {
+                        // resetLocation(mesh);
+                        // traincase=0;
+                    }
+                }
+            }
+            //加载岸桥，岸桥，船，吊钩，吊钩
+
+            var wloader1 = new THREE.ColladaLoader();
+            var wmesh1;
+            wloader1.load("assets/models/crane/MHI QC 30.dae",
+                function(result){
+                    wmesh1=result.scene.children[0].clone();
+                    wmesh1.scale.set(0.015,0.015,0.015);
+                    wmesh1.position.set(150,100,0);
+                    wmesh1.rotation.z =  Math.PI;
+                    scene.add(wmesh1);
+
+                });
+
+            var wloader2 = new THREE.ColladaLoader();
+            var wmesh2;
+            wloader2.load("assets/models/crane/MHI QC 30.dae",
+                function(result){
+                    wmesh2=result.scene.children[0].clone();
+                    wmesh2.scale.set(0.015,0.015,0.015);
+                    wmesh2.position.set(100,100,0);
+                    wmesh2.rotation.z = Math.PI;
+                    scene.add(wmesh2);
+
+                });
+
+            var wloader3 = new THREE.ColladaLoader();
+            var wmesh3;
+            wloader3.load("assets/models/ship/barco de carga.dae",
+                function(result){
+                    wmesh3=result.scene.children[0].clone();
+                    wmesh3.scale.set(0.015,0.015,0.015);
+                    wmesh3.position.set(-150,150,-30);
+                    //wmesh3.position.set(130,120,0);
+                    //wmesh3.position.set(200,200,0);
+                    wmesh3.rotation.z = Math.PI;
+                    scene.add(wmesh3);
+
+                });
+
+            var wloader4 = new THREE.ColladaLoader();
+            var wmesh4;
+            wloader4.load("assets/models/crane/daa.dae",
+                function(result){
+                    wmesh4=result.scene.children[0].clone();
+                    wmesh4.scale.set(0.015,0.015,0.015);
+                    wmesh4.position.set(145,95,15);
+                    wmesh4.rotation.z =Math.PI;
+                    scene.add(wmesh4);
+
+                });
+
+            var wloader5 = new THREE.ColladaLoader();
+            var wmesh5;
+            wloader5.load("assets/models/crane/daa.dae",
+                function(result){
+                    wmesh5=result.scene.children[0].clone();
+                    wmesh5.scale.set(0.015,0.015,0.015);
+                    wmesh5.position.set(95,95,15);
+                    wmesh5.rotation.z = Math.PI;
+                    scene.add(wmesh5);
+
+                });
+
+/*            //加载吊桥3D模型
+            var cranemesh,cranemesh2,cranemesh3,cranemesh4;
+            loadCrane(cranemesh2,150,100,0);
+            loadCrane(cranemesh3,100,100,0);
+            //loadCrane(cranemesh4,50,100,0);
+            function loadCrane(cranemesh,x,y,z){
+                var daeloader = new THREE.ColladaLoader();
+                daeloader.load("assets/models/crane/MHI QC 30.dae",
+                    function(result){
+                        cranemesh=result.scene.children[0].clone();
+                        cranemesh.scale.set(0.015,0.015,0.015);
+                        cranemesh.position.set(x,y,z);
+                        cranemesh.rotation.z=Math.PI;
+                        scene.add(cranemesh);
+                    });
+            }
+            //加载吊钩模型
+            var gomesh,gomesh2,gomesh3,gomesh4;
+            loadGo(gomesh2,145,100,15);
+            loadGo(gomesh3,95,100,15);
+            //loadCrane(gomesh3,100,100,0);
+            //loadCrane(gomesh4,50,100,0);
+            function loadGo(gomesh,x,y,z) {
+                var daaloader = new THREE.ColladaLoader();
+                daaloader.load("assets/models/crane/daa.dae",
+                    function (result) {
+                        gomesh = result.scene.children[0].clone();
+                        gomesh.scale.set(0.015, 0.015, 0.015);
+                        gomesh.position.set(x, y, z);
+                        gomesh.rotation.z = Math.PI;
+                        scene.add(gomesh);
+                    });
+            }
+
+
+            //加载船
+
+            var smesh,smesh2;
+            loadShip(smesh2,-150,150,0);
+            function loadShip(smesh,x,y,z) {
+                var dabloader = new THREE.ColladaLoader();
+                dabloader.load("assets/models/ship/barco de carga.dae",
+                    function (result) {
+                        smesh = result.scene.children[0].clone();
+                        smesh.scale.set(0.015, 0.015, 0.015);
+                        smesh.position.set(x, y, z);
+                        smesh.rotation.z = Math.PI;
+                        scene.add(smesh);
+                    });
+            }
+*/
+            function Remove() {
+                var allChildren = scene.children;
+                var lastObject = allChildren[allChildren.length - 1];
+                if (allChildren.length>14) {
+                    scene.remove(lastObject);
+                    this.numberOfObject = scene.children.length;
+                }
+            };
+            function runByPoint(truck,points){
+                var direction=UNUSABLE;
+                for(let i=0;i<points.length-1;i++){
+                    direction=getDirection(points[i],points[i+1]);
+                    if (direction!=UNUSABLE){
+                        trunTruckTo(truck,direction);
+                    }
+                }
+            }
+            //使用Vector3（）作为参数
+            function getDirection(pointS,pointE) {
+                var diirection;
+                if(pointS.x==pointE.x){
+                    if(pointS.y<=pointE.y){
+                        //向上
+                        return DIRECTION.UP;
+                    }else {
+                        return DIRECTION.DOWN;
+                    }
+                    return direction
+                }
+                if(pointS.y==pointE.y){
+                    if(pointS.x<=pointE.x){
+                        //向上
+                        return DIRECTION.RIGHT;
+                    }else {
+                        return DIRECTION.LEFT;
+                    }
+                    return direction
+                }
+                return UNUSABLE;
+            }
+            function trunTruckTo(truck,direction) {
+                truck.rotation.x=direction.X;
+                truck.rotation.y=direction.Y;
+                truck.rotation.z=direction.Z;
+            }
+            function RunShinCrane(){
+                if(wf==false) {
+                    if (wmesh3) {
+                        if (wn <= 10 && wmesh3.position.x <= 130) {
+                            wmesh3.position.x += 1.4;
+                            wmesh3.position.y -= 0.15;
+                        }
+                        if (wmesh3.position.x >= 130) {
+                            if (wmesh4) {
+                                if (wmesh4.position.y <= 95) {
+                                    flag1 = 0;
+                                }
+                                if (wmesh4.position.y >= 120) {
+                                    flag1 = 1;
+                                    wn += 1;
+
+                                }
+                                if (wmesh4.position.y >= 95 && flag1 == 0 && wn <= 10) {
+                                    wmesh4.position.y += 1;
+                                }
+                                if (wmesh4.position.y <= 120 && flag1 == 1 && wn < 10) {
+                                    wmesh4.position.y -= 1;
+                                }
+                            }
+                            if (wmesh5) {
+                                if (wmesh5.position.y <= 95) {
+                                    flag2 = 0;
+                                }
+                                if (wmesh5.position.y >= 120) {
+                                    flag2 = 1;
+
+                                }
+                                if (wmesh5.position.y >= 95 && flag1 == 0 && wn <= 10) {
+                                    wmesh5.position.y += 1;
+                                }
+                                if (wmesh5.position.y <= 120 && flag1 == 1 && wn <= 10) {
+                                    wmesh5.position.y -= 1;
+                                }
+                            }
+
+                        }
+                        if (wn >= 10 && wmesh3.position.x <= 190) {
+                            wmesh3.position.x += 0.7;
+                            wmesh3.position.y += 0.7;
+                        }
+
+                    }
+                }
+            }
+
+            //加载火车
+            var wloader6 = new THREE.ColladaLoader();
+            var wmesh6;
+            wloader6.load("assets/models/train/Freight_train.dae",
+                function(result){
+                    wmesh6=result.scene.children[0].clone();
+                    wmesh6.scale.set(0.15,0.05,0.2);
+                    wmesh6.position.set(210,-313,0);
+                    wmesh6.rotation.z = 0.5*Math.PI;
+                    scene.add(wmesh6);
+
+                });
+
+
+            var controls = new function () {
+				this.time=0;
+				this.line = 1;
+				this.speed = 5;
+				// this.isBegin=false;
+				this.numberOfObject=scene.children.length;
+
+               /* this.ShipToCrane=function(){
+                    wf=false;
+                }*/
+                //从堆场到码头启动
+				this.start=function(){
+                    startYardToCrane();
+                }
+                function startYardToCrane(){
+                    startKind=YARD_TO_CRANE;
+                    useAll();
+                    wf=false;
+                    n=0;
+
+                    for(let i=0;i<TRUCK_MAX_NUM;i++) {
+                        if (trucksTasksType[i] == YARD_TO_CRANE) {
+                            if (trucks[i]) {
+                                trucks[i].position.x=-195 + 10 * i;
+                                trucks[i].position.y=-65;
+                                trucks[i].position.z=-0;
+                                trucks[i].rotation.y = Math.PI;
+                                trucks[i].rotation.z = 0;
+                            }
+                        }
+                    }
+                }
+                //从火车到堆场启动
+                this.startToTrain=function(){
+                    startTrainToYard();
+                }
+                function startTrainToYard() {
+                    startKind=TRAIN_TO_YARD;
+                    useAll();
+                        for(let i=0;i<TRUCK_MAX_NUM;i++) {
+                            if (trucksTasksType[i] == TRAIN_TO_YARD) {
+                                if (trucks[i]) {
+                                    trucks[i].position.set(-195 + 10 * i, -65, 0);
+                                    trucks[i].rotation.y = Math.PI;
+                                    trucks[i].rotation.z = 0;
+                                    // this.isBegin=true;
+                                }
+                                trucksIsLoaded[i]=LOADED;
+                            }
+                        }
+                }
+				// this.gone=function () {
+               //      location.href=("./中控室动画.html");
+               //
+               //  }
+               // this.gones=function () {
+               //      location.href=("./Flash.html");
+
+                // }
+				//将速度设置成0来停止运动
+				this.stopNow=function(){
+					if(mesh){
+						this.speed=0;
+						}
+					};
+
+                //将速度设置成5来启动
+				this.startNow=function(){
+					if(mesh){
+						this.speed=5;
+						}
+					};
+
+                //移除模型
+				this.remove = function () {
+					var allChildren = scene.children;
+					var lastObject = allChildren[allChildren.length - 1];
+					if (allChildren.length>3) {
+						scene.remove(lastObject);
+						this.numberOfObject = scene.children.length;
+					}
+				};
+			};
+            // var controls = new function () {
+            //     this.site = "任务栏"
+            // };
+            // var gui = new dat.GUI();
+            // gui.add(controls, 'site', [ '任务一', '任务二',]);
+
+
+            var controls = new function () {
+                this.任务一 = function() {
+                    location.href=("./中控室动画.html");
+                }
+                this.任务二 = function() {
+                    location.href=("./中控室动画计划员.html");
+                }
+            };
+            var gui = new dat.GUI();
+            gui.domElement.style = 'color:red';
+            gui.add(controls, '任务一');
+            gui.add(controls, '任务二');
+                // gui.add(controls,'line').name("选择路径：");
+                // gui.add(controls,'speed', 1, 10).step(4).listen();
+                //
+                // gui.add(controls,'gone').name("开始");
+                //
+                // gui.add(controls,'startToTrain').name("火车到堆场启动");
+                //
+                // gui.add(controls,'start').name("堆场到码头启动");
+                //
+                // gui.add(controls,'ShipToCrane').name("岸桥到船启动");
+
+			/*var f=gui.addFolder('CHOOSE');
+			f.add(controls,'startCar1');
+			f.add(controls,'startCar2');
+			f.add(controls,'startCar3');
+			f.add(controls,'startCar4');*/
+			//gui.add(controls,'reStart');
+			//gui.add(controls,'stopCar');
+			//gui.add(controls,'stopNow');
+			//gui.add(controls,'startNow');
+			//gui.add(controls,'remove');
+			//gui.add(controls,'numberOfObject').listen().name("所有实体个数：");
+			//gui.add(controls,'time').step(1).listen();
+
+
+			// attach them here, since appendChild needs to be called first
+			var trackballControls = initTrackballControls(camera, renderer);
+			var clock = new THREE.Clock();
+
+
+			//控制卡车在（100，-30）、（-100，-30）、（-200，-65）这三个点以及初始位置停留一段时间（空循环）
+			function runOne(mesh,point,kind,yardnum,startkind) {
+                if (mesh) {
+                    if(mesh.position.x==point[11].x &&mesh.position.y==point[11].y){
+                        if(startKind==TRAIN_TO_YARD) {
+                            trucksIsLoaded[mesh.truckNum]=LOADED;
+                        }else {
+                            trucksIsLoaded[mesh.truckNum]=UNLOADED;
+                        }
+                    }
+                    if(mesh.position.x==point[1].x &&mesh.position.y==point[1].y){
+                        if(startKind==TRAIN_TO_YARD) {
+                            trucksIsLoaded[mesh.truckNum]=LOADED;
+                        }else {
+                            trucksIsLoaded[mesh.truckNum]=UNLOADED;
+                        }
+                    }
+                    if ((mesh.position.x == 100 && mesh.position.y == -30&&yardnum==1)
+                        ||(mesh.position.x == -100 && mesh.position.y == -30&&yardnum==2)
+                        ||(mesh.position.x == -200 && mesh.position.y == -65)
+						||(mesh.position.x==90&&mesh.position.y==70&&kind==1)
+                        ||(mesh.position.x==90&mesh.position.y==70&&kind==2)
+                        ||(mesh.position.x==140&&mesh.position.y==70&&kind==3)
+                        ||(mesh.position.x==140&&mesh.position.y==70&&kind==4)) {
+                        //这里不能设置成全局变量，因为每个车都要调用这个变量来控制空循环次数，最好用每个车自身的属性来控制
+                        //这里用mesh.rotation.x来控制，每次自增0.000001不影响看到的效果
+                        mesh.rotation.x += 0.000001;
+                        if (mesh.rotation.x > (0.5 * Math.PI + 0.00005)){
+                            //从堆场到火车运动
+                            runToTrain(mesh,kind,yardnum,startkind);
+                            //从码头到堆场运动
+                            runCar(mesh, point, kind, yardnum,startkind);
+                            mesh.rotation.x = 0.5 * Math.PI;
+                        }
+                    }
+                    else {
+                        runToTrain(mesh,kind,yardnum,startkind);
+                        runCar(mesh, point, kind, yardnum,startkind);
+                    }
+                }
+            }
+            //堆场类，用来管理集装箱
+            function Yard(yardnum,length,width,location,){
+			    this.yardNum=yardnum;
+			    this.length=length;
+			    this.width=width;
+			    this.location=location;
+                var startPoint = new THREE.Vector3();
+                startPoint.x=location.x-length/2+CONTAINER.LENGTH*1.5;
+                startPoint.y=location.y-width/2+CONTAINER.WIDTH*2;
+			    startPoint.z=location.z;
+
+                this.Counter=0;
+                this.CaseList=new Array(10);
+                //数字行指示器
+                this.rowIndicator=new Array(MAX_ROW_NUM);
+                //数字列指示器
+                this.lineIndicator=new Array(MAX_ROW_NUM);
+                this.rowLines=[];
+                this.lineLines=[];
+               var cubeGeometry = new THREE.BoxGeometry(length,width,0);
+               var cubeMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x2f2f4f
+                    // ,wireframe: true
+                });
+                //添加一个平面作为堆场平面
+                this.yardPlane  = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                this.yardPlane.position.set(location.x,location.y,location.z);
+                scene.add(this.yardPlane);
+                this.draLine=function(p1,p2,color){
+                    var geometry = new THREE.Geometry();
+                    var material = new THREE.LineBasicMaterial( { linewidth:25,color:color} );
+                    geometry.vertices.push(p1);
+                    geometry.vertices.push(p2);
+                    var line = new THREE.Line( geometry, material );
+                    scene.add(line);
+                }
+                for(let i=0;i<MAX_ROW_NUM+1;i++){
+                    var start=new THREE.Vector3(startPoint.x-CONTAINER.LENGTH,startPoint.y+i*CONTAINER.WIDTH,startPoint.z+0.5);
+                    var end=new THREE.Vector3(location.x+length/2,location.y+width/2,location.z+0.5);
+                    var geometry = new THREE.PlaneGeometry(CONTAINER.WIDTH,CONTAINER.WIDTH);
+                    var material = new THREE.MeshBasicMaterial({});
+                    material.map=ROWPIC[i];
+                    this.rowIndicator[i] = new THREE.Mesh(geometry, material);
+                    //避免被平面挡住，加高0.5
+                    this.rowIndicator[i].position.set(start.x,start.y,start.z+0.5);
+                    // var end=new Vector3();
+                    var lineStart=start;var lineEnd=new THREE.Vector3(location.x+length/2,start.y,start.z);
+                    // this.draLine(lineStart,lineEnd,0xff0000);
+                    scene.add(this.rowIndicator[i]);
+                }
+
+                // this.count=0;
+                for(let i=0;i<10;i++){
+                    this.CaseList[i]=new Array(10);
+                    for(let j=0;j<10;j++){
+                        this.CaseList[i][j]=new Array(6);
+                        for(let k=0;k<6;k++){
+                            this.CaseList[i][j][k]=AVAILABLE;
+                            // this.count+=CaseList[i][j][k];
+                        }
+                    }
+                }
+
+                for(let i=0;i<MAX_ROW_NUM+1;i++){
+                    var geometry = new THREE.PlaneGeometry(CONTAINER.WIDTH,CONTAINER.WIDTH);
+                    var material = new THREE.MeshBasicMaterial({});
+                    material.map=LINEPIC[i];
+                    this.lineIndicator[i] = new THREE.Mesh(geometry, material);
+                    //避免被平面挡住，加高0.5
+                    this.lineIndicator[i].position.set(startPoint.x+CONTAINER.LENGTH*i,startPoint.y-CONTAINER.WIDTH,startPoint.z+0.5);
+                    scene.add(this.lineIndicator[i]);
+                }
+
+                this.getAvaiLoc=function () {
+                    for(let i=0;i<6;i++){
+                            for (let j = 0; j < 10; j++) {
+                                    for (let k = 0; k < 10; k++) {
+                                        if (this.CaseList[k][j][i] == AVAILABLE) {
+                                            // alert(i + "，" + j + "," + k);
+                                            return new locData(k,j,i);
+                                        }
+                                    }
+                            }
+                            // return {hang:hangNum[i];lie:lieNum[i];high:highNum[i]}
+                    }
+                    return UNUSABLE;
+                }
+                this.getUsedLoc=function () {
+                    for(let i=0;i<6;i++){
+                            for (let j = 0; j < 10; j++) {
+                                    for (let k = 0; k < 10; k++) {
+                                        if (this.CaseList[k][j][i] != AVAILABLE) {
+                                            // alert(i + "，" + j + "," + k);
+                                            return new locData(k,j,i);
+                                        }
+                                }
+                             }
+                        // return {hang:hangNum[i];lie:lieNum[i];high:highNum[i]}
+                    }
+                    return AVAILABLE;
+                }
+                function locData(hang,lie,gao) {
+                    this.hang=hang;
+                    this.lie=lie;
+                    this.high=gao;
+                }
+                this.addOneContainer=function(){
+                        var container=getOneContainer();
+                        var locator=this.getAvaiLoc(container);
+                        var x=locator.hang,y=locator.lie,z=locator.high;
+                        container.position.set(startPoint.x+CONTAINER.LENGTH*x,startPoint.y+CONTAINER.WIDTH*y,
+                            startPoint.z+CONTAINER.HEIGHT*z+CONTAINER.HEIGHT/2);
+                         this.CaseList[x][y][z]=container;
+                    scene.add(this.CaseList[x][y][z]);
+                }
+                this.removeOneContainer=function(){
+                    var locator=this.getUsedLoc();
+                    if(locator!=AVAILABLE) {
+                        var x=this.Counter,y=0,z=0;
+                        var x = locator.hang, y = locator.lie, z = locator.high;
+                        scene.remove(this.CaseList[x][y][z]);
+                        this.CaseList[x][y][z] = AVAILABLE;
+                    }
+                }
+                //暂时不知道多态怎么搞，这个会被当成上边的那个
+                // this.addOneContainer=function(location){
+                //     var container=getOneContainer();
+                // }
+                // this.removeOneContainer=function(location){
+                //
+                // }
+
+            }
+            function getOneContainer() {
+                ModleCubeGeometry = new THREE.BoxGeometry(CONTAINER.LENGTH,CONTAINER.WIDTH,CONTAINER.HEIGHT);
+                //集装箱可用纹理
+                var textureLoader = new THREE.TextureLoader();
+                var texture0 =textureLoader.load("assets/textures/工作区/qinglan.jpg");
+                var texture1=textureLoader.load("assets/textures/工作区/hong.jpg");
+                var texture2=textureLoader.load("assets/textures/工作区/lv.jpg");
+                var textAvi=[texture0,texture1,texture2];
+                ModleCubeMaterial = new THREE.MeshBasicMaterial({
+                    // color: 0xFF1A13
+                    map: textAvi[caseTextureNum]
+                });
+                mesh = new THREE.Mesh(ModleCubeGeometry, ModleCubeMaterial);
+                edges = new THREE.EdgesHelper( mesh, 0x000000 );//设置边框，可以旋转
+                caseTextureNum=(caseTextureNum==2?0:++caseTextureNum);
+                // scene.add(mesh);
+                return mesh;
+            }
+            function TrucksManager() {
+                this.trucksTaskYardNum=new Array(TRUCK_MAX_NUM);
+                this.trucksTaskType=new Array(TRUCK_MAX_NUM);
+                this.trucksIsLoaded=new Array(TRUCK_MAX_NUM);
+                this.setTruckTaskYardNum=function(truckNum,taskYardNum){
+                    this.trucksTaskYardNum[truckNum-1]=taskYardNum;
+                }
+                this.setTruckTaskType=function(truckNum,taskType){
+                    this.trucksTaskType[truckNum-1]=taskType;
+                }
+                this.getTruckIsLoaded=function(truckNum){
+                    return this.trucksIsLoaded;
+                }
+                this.getYardNum=function(truckNum){
+                    return this.trucksTaskYardNum[truckNum-1];
+                }
+                this.getYardTaskType=function(truckNum){
+                    return this.trucksTaskType[truckNum-1];
+                }
+            }
+            //堆场加箱子
+            function loadContainer(mesh,Case){
+                if(mesh){
+                    if((mesh.position.x == 100 && mesh.position.y == -30&&mesh.rotation.x==(0.5 * Math.PI ))
+                        ||(mesh.position.x == -100 && mesh.position.y ==-30&&mesh.rotation.x==(0.5 * Math.PI ) )){
+                        for(let i=0;i<MAX_ROW_NUM;i++)
+                        {
+                            if(yardInUse[i]!=undefined){
+                                if(yardInUse[i].yardNum==trucksTaskYardnum[mesh.truckNum]){
+                                    if(trucksIsLoaded[mesh.truckNum]==LOADED){
+                                        trucksIsLoaded[mesh.truckNum]=UNLOADED;
+                                        yardInUse[i].addOneContainer();
+
+                                    }
+                                }
+                            }else {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function unloadContainer(mesh,Case){
+                if(mesh){
+                    if((mesh.position.x == 110 && mesh.position.y == -30)
+                        ||(mesh.position.x == -90 && mesh.position.y ==-30)){
+                        for(let i=0;i<MAX_ROW_NUM;i++)
+                        {
+                            if(yardInUse[i]!=undefined){
+                                if(yardInUse[i].yardNum==trucksTaskYardnum[mesh.truckNum]){
+                                    if(trucksIsLoaded[mesh.truckNum]==UNLOADED){
+                                        yardInUse[i].removeOneContainer();
+                                        trucksIsLoaded[mesh.truckNum]=LOADED;
+                                    }
+                                }
+                            }else {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+
+
+			// controls.startCar1();
+
+			render();
+			function render()
+            {
+                // update the stats and the controls
+				trackballControls.update(clock.getDelta());
+				stats.update();
+                RunShinCrane();
+
+                // if(traincase==containerNum&&wsp==1){
+                //     wsp=0;
+                //     Remove();
+                //     document.getElementById("selectBox").style.display = "block";
+                //     document.getElementById("shelter").style.display = "block";
+                // }
+
+				//自定义一个时间用来显示
+				controls.time+=0.05;
+
+                beginTrucks(startYardnum,startKind);
+                function beginTrucks(yardnum,startkind) {
+                    for(let i=0;i<TRUCK_MAX_NUM;i++){
+                            // startkind
+                            if (trucksTasksType[i] = startkind) {
+                                //yardnum,不需要判断了，认为只要有任务就去运行吧
+                                // if (trucksTaskYardnum[i] == yardnum) {
+                                    runOne(trucks[i], point, i + 1, trucksTaskYardnum[i], startkind);
+                                // }
+                            }
+                    }
+                }
+
+                if(startKind==TRAIN_TO_YARD)
+                {
+                    //判断卡车位置，往堆场上加集装箱
+                    for(let i=0;i<TRUCK_MAX_NUM;i++){
+                        loadContainer(trucks[i], trucksTaskYardnum[i]);
+                        // unloadContainer(trucks[i], trucksTaskYardnum[i]);
+                    }
+                }
+
+                if(startKind==YARD_TO_CRANE)
+                {
+                    //判断卡车位置，堆场上取消装箱
+                    for(let i=0;i<TRUCK_MAX_NUM;i++){
+                        unloadContainer(trucks[i], trucksTaskYardnum[i]);
+                    }
+                }
+				// render using requestAnimationFrame
+				requestAnimationFrame(render);
+				renderer.render(scene, camera);
+            }
+		}
+
+		// function ok() {
+        //
+        //     // var aaaa = new init();
+        //     //
+        //     // aaaa. gui.add(controls,'start').name("堆场到码头启动");
+        //     //  location.href='./testNewWeb3D3.html';
+        //     document.getElementById("selectBox").style.display = "none";
+        //     document.getElementById("shelter").style.display = "none";
+        //
+        // }
+            function ok() {
+                location.href='http://localhost:8085/fengjinbao/CTPortSim/web3Dwork/Flash.html?_ijt=2ai9js99op36avk8sr8gp6hd0h';}
+            // var RENWU = new THREE.Mesh(RENWUGeometry, RENWUMaterial);
+            // // 新建plane的position
+            // RENWU.position.set(0, 0, 0);
+            // scene.add(RENWU);
+            // RENWU.userData = {URL:"http://localhost:8085/fengjinbao/CTPortSim/Flash.html?_ijt=70fmtqiqojjclvpf5h83amcff4"};
+
+        </script>
+    </head>
+
+    <body>
+    <!--<h1><a href="http://localhost:8085/fengjinbao/CTPortSim/Flash.html?_ijt=70fmtqiqojjclvpf5h83amcff4">任务一</a></h1>-->
+    <!--<h1><a href="http://localhost:8085/fengjinbao/CTPortSim/Flash.html?_ijt=70fmtqiqojjclvpf5h83amcff4">任务二</a></h1>-->
+    <!--<div id="right" style="backgroungcolor:#000000;color；#FFFFFF;height;100px;width:100px;float:right;">任务一</div>-->
+    <!--<p><a href="http://localhost:8085/fengjinbao/CTPortSim/Flash.html?_ijt=70fmtqiqojjclvpf5h83amcff4"target="_blank">任务一</a></p>-->
+         <!-- Div which will hold the Output -->
+        <div id="webgl-output"></div>
+         <div id="selectBox" class="selectBox">
+
+             <div align="center">
+                 <p>即将开始任务一</p>
+             </div>
+             <div align="center">
+                 <button onclick="ok()">确定</button>
+                 <!--<button onclick="cancel()">取消</button>-->
+             </div>
+
+             <div align="center">
+                 <p>即将开始任务二</p>
+             </div>
+             <div align="center">
+                 <button onclick="ok()">确定</button>
+                 <!--<button onclick="cancel()">取消</button>-->
+             </div>
+
+         </div>
+         <div id="shelter" class="shelter"></div>
+    
+        <!-- Javascript code that runs our Three.js examples -->
+        <script type="text/javascript">
+            (function () {
+                // your page initialization code here
+                // the DOM will be available here
+				init()
+            })();
+        </script>
+    </body>
+</html>

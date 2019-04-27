@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>港口铁水联运仿真</title>
+
+
+    <style>
+        /* 开始设置网页样式 */
+        body{
+            background-color: #c0dbf7;
+        } /*设置背景图片*/
+        #title{
+            margin-top: -50px;
+        }
+        /* class=z的div元素的外边距在原有的基础上向下移动100px*/
+        div.z{
+            margin-top:30px;
+        }
+        /*第一个表格里的div设置大小为长240，高20，里面的字体大小为20*/
+        div.fixed{
+            width:120px;
+            height: 30px;
+            font-size: 20px;
+            margin:auto;
+        }
+        /*第二个表格外的div*/
+        .b{
+            margin-top: 10px;
+        }
+        select.my_selected{
+            position:absolute;
+            width:90px;
+            height:28px;
+            font-size:20px;
+            background-color:#c0dbf7;
+        }
+        /*第二个表格设置为有边框*/
+        #fTab{
+            border-collapse: collapse;
+        }
+        /*第二个表格设置为有边框*/
+        #zc{
+            border-collapse: collapse;
+        }
+        /*第二个表格的格子设置为边框大小1，长80，高25，居中*/
+        #bt th{
+            width: 80px;
+            height: 25px;
+            text-align: center;
+        }
+        #zc td{
+            border: 1px solid #a0302a;
+            width: 80px;
+            height: 25px;
+            text-align: center;
+
+        }
+        /* 下拉框滚动设置 */
+        .my_selected{position:absolute;z-index:1;font-size: 15px;margin:auto;}
+    </style>
+
+
+</head>
+<body scroll="no">
+<img src="铁水联运logo.png">
+<!--主标题-->
+<h1 id="title" align="center">堆场计划</h1>
+<div class="z">
+    <div>
+        <!--第一个无边框表格，内容主要是下拉选择框-->
+    <table id="fTab" border="1" align="center">
+        <tr>
+            <td><div class="fixed" align="right">类别:</div></td>
+            <td><div class="fixed">
+                <!--下拉框，并设置为内容超过4个开始滚动显示-->
+                <select name="Type" class="my_selected" data-edit-select="1"  onmousedown="if(this.options.length>4){this.size=5}"
+                        onblur="this.size=0" onchange="this.size=0"  style="position:absolute;z-index:10;width:90px;height:28px;font-size:20px;background-color:#c0dbf7;">
+                    <option value="0">出口箱</option>
+                    <option value="1">进口箱</option>
+                    <option value="2">存储箱</option></option>
+                    <option value="3">中转箱
+                </select>
+            </div></td>
+            <td><div class="fixed"align="right">船公司:</div></td>
+
+            <td><div class="fixed">
+                <select class="my_selected" style="position:absolute;z-index:9;width:110px;height:28px;">
+                    <option value="显示所有" >显示所有</option>
+            </select></div></td>
+
+            <td><div class="fixed"align="right">来源:</div></td>
+            <td><div class="fixed">
+                <select name="Source" class="my_selected" data-edit-select="1"  onmousedown="if(this.options.length>4){this.size=5}"
+                        onblur="this.size=0" onchange="this.size=0"  style="position:absolute;z-index:9;">
+                    <option value="0">铁路</option>
+                    <option value="1">水路</option>
+                    <option value="2">公路</option>
+                </select>
+            </div></td>
+            <td><div class="fixed"align="right">岸桥:</div></td>
+            <td><div class="fixed">
+                <select class="my_selected" style="position:absolute;z-index:9;width:110px;height:28px;">
+                    <option value="显示所有">显示所有</option>
+                    <option value="1">岸桥1</option>
+                    <option value="2">岸桥2</option>
+                </select></div></td>
+        </tr>
+
+        <tr>
+
+            <td><div class="fixed"align="right">箱属:</div></td>
+            <td><div class="fixed">
+                <select name="xs" class="my_selected">
+                    <option value="显示所有">显示所有</option>
+                    <option value="ZGXL">ZGXL</option>
+                    <option value="ZG11">ZG11</option>
+                    <option value="ECC">ECC</option>
+                </select></div></td>
+            <td><div class="fixed"align="right">卸货港:</div></td>
+            <td><div class="fixed">
+                <select name="UnloadingPort"
+                        style="position:absolute;z-index:8;width:100px;height: 25px;font-size:20px;background-color:#c0dbf7;">
+                    <option value="显示所有">显示所有</option>
+                    <option value="太仓北1">太仓北1</option>
+                    <option value="太仓北2">太仓北2</option>
+                    <option value="太仓北3">太仓北3</option>
+                    <option value="九区">上港九区</option>
+                    <option value="十区">上港十区</option>
+                    <option value="宁波—舟山">宁波—舟山港</option>
+                    <option value="黄埔老港">黄埔老港</option>
+                    <option value="泉州">泉州港</option>
+                    <option value="营口">营口港</option>
+                    <option value="九江">九江港</option>
+                    <option value="南京">南京港</option>
+                    <option value="镇江">镇江港</option>
+                    <option value="南通">南通港</option>
+                    <option value="芜湖">芜湖港</option>
+                    <option value="马鞍山">马鞍山港</option>
+                    <option value="铜陵">铜陵港</option>
+                </select>
+            </div></td>
+            <td><div class="fixed"align="right">提单号:</div></td>
+            <td><div class="fixed">
+                <select name="BillOfLadingNumber" class="my_selected" style="position:absolute;z-index:8;width:100px;height: 25px;font-size:20px;background-color:#c0dbf7;">>
+                    <option value="显示所有">显示所有</option>
+                    <option value="RZ1801SFZ362">RZ1801SFZ362</option>
+                    <option value="HDY1819ANXL024">HDY1819ANXL024</option>
+                    <option value="ZTS1826SYKHS001">ZTS1826SYKHS001</option>
+                    <option value="ZTS1826SYKHS001_A">ZTS1826SYKHS001_A</option>
+                    <option value="ZTS1826SYKHS015">ZTS1826SYKHS015</option>
+                    <option value="HLZX1832NHK168">HLZX1832NHK168</option>
+                    <option value="HS1826SJZHS027">HS1826SJZHS027</option>
+                    <option value="COAU7060659510">COAU7060659510</option>
+                    <option value="COAU7060658410">COAU7060658410</option>
+                    <option value="COAU7060658440">COAU7060658440</option>
+                    <option value="COAU7060658430">COAU7060658430</option>
+                    <option value="COAU7060658420">COAU7060658420</option>
+                    <option value="Q00000">Q00000</option>
+                    <option value="COSU6065837020">COSU6065837020</option>
+                    <option value="COAU7060659550">COAU7060659550</option>
+                    <option value="COSU6065836760">COSU6065836760</option>
+
+
+
+                </select></div></td>
+            <td><div class="fixed"align="right">目的港:</div></td>
+            <td><div class="fixed">
+                <select name="DestinationPort" align="left" style="position:absolute;z-index:8;width:140px;height: 25px;font-size:20px;background-color:#c0dbf7;">
+                    <option value="显示所有">显示所有</option>
+                    <option value="上海">上海港</option>
+                    <option value="宁波—舟山">宁波—舟山港</option>
+                    <option value="太仓">太仓港</option>
+                    <option value="南京">南京港</option>
+                    <option value="镇江">镇江港</option>
+                    <option value="南通">南通港</option>
+                    <option value="马鞍山">马鞍山港</option>
+                    <option value="铜陵">铜陵港</option>
+                    <option value="安庆">安庆港</option>
+                    <option value="九江">九江港</option>
+                    <option value="岳阳">岳阳港</option>
+                    <option value="南京港">黄石新港</option>
+                    <option value="黄石新港">荆州港</option>
+                    <option value="武汉">武汉港</option>
+                    <option value="宜昌">宜昌港</option>
+                    <option value="重庆">重庆港</option>
+                    <option value="营口">营口港</option>
+                    <option value="泉州">泉州港</option>
+                    <option value="湛江">湛江港</option>
+                    <option value="黄埔老港">黄埔老港</option>
+                    <option value="大连">大连港</option>
+                    <option value="烟台">烟台港</option>
+                    <option value="九江">九江港</option>
+                </select>
+            </div></td>
+        </tr>
+        <tr>
+
+            <td><div class="fixed" align="right">内外贸:</div></td>
+            <td><div class="fixed">
+                <select name="DomesticOrForeignTrade" class="my_selected">
+                    <option value="内贸">内贸</option>
+                    <option value="外贸">外贸</option>
+            </select></div></td>
+            <td><div class="fixed" align="right">流向:</div></td>
+            <td><div class="fixed">
+                <select name="Whereabouts" class="my_selected">
+                    <option value="0">船舶</option>
+                    <option value="1">火车</option>
+                </select></div></td>
+            <td colspan="2"><div>
+            <select name="Whereabout" align="center"  style="width:110px;height:28px;font-size:20px;background-color:#c0dbf7;">
+                    <option value="0">显示所有</option>
+                    <option value="HSXG/118E">HSXG/118E</option>
+                    <option value="HSXG/119E">HSXG/119E</option>
+                </select></div></td>
+            <td><div class="fixed" align="right">
+                过滤器：
+            </div></td>
+            <td colspan="2"><div  >
+                <select name="filters" align="left" style="width:180px;height:28px;font-size:20px;background-color:#c0dbf7;">
+                    <option value="-1">(空重/尺寸/类型)</option>
+                    <option value="0">F/20/GP</option>
+                    <option value="1">F/20/HQ</option>
+                    <option value="2">E/20/GP</option>
+                    <option value="3">E/20/HQ</option>
+                    <option value="4">F/40/GP</option>
+                    <option value="5">F/40/HQ</option>
+                    <option value="6">E/40/GP</option>
+                    <option value="7">E/40/HQ</option>
+                </select></div></td>
+        </tr>
+    </table>
+    </div>
+    <!--显示刷新，确定按钮，并居中-->
+    <div align="center">
+        <button onclick="refresh(ContainerList)">筛选</button>
+        <button onclick="ok()">确定</button>
+    </div>
+    <div class="b">
+        <p style="font-size: 20px;font-weight:bold;" align="center">集装箱信息</p>
+    </div>
+    <div class="a" style="width:100%; height:600px; overflow:scroll;overflow:scroll;overflow-x:hidden" align="center">
+        <!--第二个表格-->
+        <table id="zc" width=80% align="center">
+        <tr>
+            <th>编号</th>
+            <th>提单号</th>
+            <th>箱号</th>
+            <th>空重</th>
+            <th>尺寸</th>
+            <th>类型</th>
+            <th>箱公司</th>
+            <th>铅封号</th>
+            <th>内外贸</th>
+            <th>毛重</th>
+            <th>装货港</th>
+            <th>目的港</th>
+            <th>卸货港</th>
+        </tr>
+        <tbody id="tboby" ></tbody>
+        </table>
+    </div>
+    <script type="text/javascript" src="js/three.js"></script>
+    <script type="text/javascript" src="js/TrackballControls.js"></script>
+    <script type="text/javascript" src="util/Stats.js"></script>
+    <script type="text/javascript" src="util/dat.gui.js"></script>
+    <script type="text/javascript" src="loaders/ColladaLoader.js"></script>
+    <script type="text/javascript" src="loaders/OBJLoader.js"></script>
+    <script type="text/javascript" src="loaders/MTLLoader.js"></script>
+    <script type="text/javascript" src="js/util.js"></script>
+    <script type="text/javascript" src="js/myDefined.js"></script><!--引用自定义的js来运行集卡调度策略 -->
+    <script>
+        //通过引入myDefined.js，将初始好的ContainerList载入
+        // ContainTruckSchedule();
+        var gareenText1=localStorage.getItem("Containers0");
+        var ContainerList=JSON.parse(gareenText1);
+
+        for(var i=0;i<ContainerList.length;i++){
+            switch (i%3) {
+                case 0:
+                    ContainerList[i].Colors = "Red";
+                    break;
+                case 1:
+                    ContainerList[i].Colors = "Blue";
+                    break;
+                case 2:
+                    ContainerList[i].Colors = "Green";
+                    break;
+                default:break;
+            }
+            ContainerList[i].BayNo="null";
+            ContainerList[i].CarNum="null";
+            if(ContainerList[i].Size ==40){
+                ContainerList[i].BayNo40="null";
+            }
+        }
+        console.log(ContainerList);
+        //data2为经过筛选后的ContainerList
+        // alert(ContainerList[1].ContainerId);
+        showTab(ContainerList);
+        function showTab(List) {
+            for(var i = 0;i<List.length;i++){
+                insRow(List,i);
+            }
+        }
+        function insRow(List,n)
+        {
+            var x=document.getElementById('zc').insertRow(n+1);
+            x.insertCell(0).innerHTML=List[n].SN;
+            x.insertCell(1).innerHTML=List[n].BillOfLadingNumber;
+            x.insertCell(2).innerHTML=List[n].ContainerNumber;
+            x.insertCell(3).innerHTML=List[n].EmptyOrheavyContainer;
+            x.insertCell(4).innerHTML=List[n].Size;
+            x.insertCell(5).innerHTML=List[n].Types;
+            x.insertCell(6).innerHTML=List[n].ContainerCompany;
+            x.insertCell(7).innerHTML=List[n].SealNum;
+            x.insertCell(8).innerHTML=List[n].Trade;
+            x.insertCell(9).innerHTML=List[n].Weight;
+            x.insertCell(10).innerHTML=List[n].LoadingPort;
+            x.insertCell(11).innerHTML=List[n].DestinationPort;
+            x.insertCell(12).innerHTML=List[n].UnloadingPort;
+        }
+
+        var datas;
+        /*
+        定义点击刷新按钮的函数，点击后将筛选后的ContainerList显示在第二个表格上
+         */
+        function refresh(List) {
+            clcTab();
+            var newList = List;
+            var ch = new Array();
+            ch[0]="BillOfLadingNumber";//提单号
+            ch[1]="xs";//箱属
+            ch[2]="UnloadingPort";//卸货港
+            ch[3]="DestinationPort";//目的港
+            // ch[4]="DomesticOrForeignTrade";//内外贸
+            var ch_glq="filters";//过滤器
+            for(var i=0;i<ch.length;i++){
+                newList = selectContainer(ch[i],newList);
+            }
+            var v=document.getElementsByName(""+ch_glq)[0].value;
+            if(v!="-1"){
+                if(v=="0"||v=="1"||v=="2"||v=="3"){
+                    newList=newList.filter(function (e) {
+                        return e.Size==20;
+                    })
+                }else {
+                    newList=newList.filter(function (e) {
+                        return e.Size==40;
+                    })
+                }
+                if(v=="0"||v=="1"||v=="4"||v=="5"){
+                    newList=newList.filter(function (e) {
+                        return e.EmptyOrheavyContainer=="F";
+                    })
+                }else {
+                    newList=newList.filter(function (e) {
+                        return e.EmptyOrheavyContainer=="E";
+                    })
+                }
+                if(v=="0"||v=="2"||v=="4"||v=="6"){
+                    newList=newList.filter(function (e) {
+                        return e.Types=="GP";
+                    })
+                }else {
+                    newList=newList.filter(function (e) {
+                        return e.Types=="HP";
+                    })
+                }
+            }
+            // alert(newList.length);
+            datas=newList;
+            showTab(newList);
+        }
+        //清空表格内容
+        function clcTab() {
+            var cTab = document.getElementById("zc");
+            var rowNum=cTab.rows.length;
+            for(var i=1;i<rowNum;i++){
+                cTab.deleteRow(i);
+                rowNum --;
+                i--;
+            }
+            // var tr=document.createElement("tr");
+            // cTab.insertRow(tr);
+        }
+
+        // function shua() {
+        //     //通过id获取第二个表格
+        //     var tab=document.getElementById("zc");
+        //     //通过检测第二个表格的行数防止表格不会重复添加
+        //     var tablRows = tab.rows.length-1;
+        //     while(tablRows>0){
+        //         tab.deleteRow(tablRows);
+        //         tablRows--;
+        //     }
+        //     //通过selectContainer函数将选择对应的ContainerList筛选出来
+        //     var v1="Type";
+        //     var data1=selectContainer(v1,ContainerList);
+        //     var v2="Source";
+        //     data1=selectContainer(v2,data1);
+        //     var v3="Whereabouts";
+        //     data1=selectContainer(v3,data1);
+        //     var v4="UnloadingPort";
+        //     data1=selectContainer(v4,data1);
+        //     var v5="DestinationPort";
+        //     data1=selectContainer(v5,data1);
+        //     var v6="BillOfLadingNumber";
+        //     data1=selectContainer(v6,data1);
+        //     var v7="DomesticOrForeignTrade"
+        //     var s=document.getElementsByName("Weight")[0].value;
+        //     //判断筛选后的数据，如果没有，则弹出提示框
+        //     if(data1.length==0||s==0){
+        //         alert("没有所指定的集装箱，请重新选择")
+        //         return;
+        //     }
+        //     //下面则是将筛选后的数据显示出来
+        //     var row=tab.insertRow(tab.rows.length);
+        //     var c1=row.insertCell(0);
+        //     //通过判断筛选后的数据类型显示对应的类别
+        //     switch(data1[0].Type){
+        //         case 0:
+        //         c1.innerHTML="出口";
+        //         break;
+        //         case 1:
+        //             c1.innerHTML="进口";
+        //             break;
+        //         case 2:
+        //             c1.innerHTML="存储";
+        //             break;
+        //         case 3:
+        //             c1.innerHTML="中转";
+        //             break;
+        //         }
+        //     // 来源都为黄石新港
+        //     var c2=row.insertCell(1);
+        //     c2.innerHTML="黄石新港"
+        //     var c3=row.insertCell(2);
+        //     c3.innerHTML="HSXG/118E";
+        //     var c4=row.insertCell(3);
+        //     c4.innerHTML=data1[0].UnloadingPort;
+        //     var c5=row.insertCell(4);
+        //     if(s==1)
+        //     c5.innerHTML="20/HQ/E";
+        //     var weight=0;
+        //     //累加出总重
+        //     for(var i=0;i<data1.length;i++){
+        //         weight+=data1[i].Weight;
+        //     }
+        //     var c6=row.insertCell(5);
+        //     c6.innerHTML=""+weight;
+        //     var c7=row.insertCell(6);
+        //     //显示箱数
+        //     c7.innerHTML=data1.length;
+        //     data2=data1;
+        // }
+        /*
+         定义点击确定按钮的函数，点击后将数据传递到test1，并跳转
+        */
+        function ok() {
+            //将data2转换为json格式
+            var gareenText=JSON.stringify(datas);
+            console.log(gareenText);
+            //通过localStorage传递
+            localStorage.setItem("text",gareenText);
+            //跳转到test1.html
+            location.href = './yardChoose.html';
+        }
+        /*
+           筛选函数，传入类型和数据
+        */
+        function selectContainer(choose,data) {
+            //通过name获取下拉框返回的值
+            var v=document.getElementsByName(""+choose)[0].value;
+            //通过js自带的filter函数将数据筛选出来
+            if(v!="显示所有"){
+                data=data.filter(function (e) {
+                    return e[choose]==v;
+                })
+            }
+            return data;
+        }
+    </script>
+</div>
+</body>
+</html>

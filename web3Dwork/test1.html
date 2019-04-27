@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>港口铁水联运仿真</title>
+    <!--<script type="text/javascript" src="js/myDefined.js"></script>&lt;!&ndash;引用自定义的js来运行集卡调度策略 &ndash;&gt;-->
+
+    <style>
+        #title{
+            margin-top: -50px;
+        }
+        /* 开始设置网页样式 */
+        body{
+            background-color: #c0dbf7;
+        } /*设置背景图片*/
+        /* class=a的div元素的外边距在原有的基础上向下移动100px*/
+        #a{
+            margin-top: 20px;
+            width:100%;
+            text-align:center;
+        }
+        #c{
+            margin-top: 50px;
+            text-align:center;
+        }
+        #t2 th,td{
+            width: 100px;
+            height: 25px;
+            text-align: center;
+        }
+        /*表格中相邻单元格的边框间的距离为0，并隐藏空表格*/
+        table{
+            border-spacing: 0px;
+            empty-cells: hide;
+        }
+        /*单元格的边框为0.5,颜色为黑,长30,高20,内容居中,字体大小为15*/
+        td{
+            border: 0.5px solid #000000;
+            min-width: 30px;
+            height: 20px;
+            text-align: center;
+            font-size: 15px;
+            user-select: none;
+        }
+        /*单元格的边框为0.5,颜色为蓝色,有一列这样显示作为吊桥标志*/
+        td.a{
+            border: 3px solid #0078ff;
+        }
+        td.t40{
+            background-color: #ffffff;
+        }
+        th{
+            font-size: 15px;
+        }
+    </style>
+    <script>
+        var chooseResult=localStorage.getItem("chooseResult");
+        var b=JSON.parse(chooseResult);
+        alert(b.yardnum);
+        var a=b.yardnum;
+
+        var start = new Array(0,0);
+        var end = new Array(0,0);
+        var isFirst = true;
+
+        //定义一个标识符
+        var mouseDownFlag=false;
+        /*
+            鼠标按下时触发该函数
+        */
+        function down(){
+            mouseDownFlag=true;
+        }
+        /*
+            鼠标松开时触发该函数
+        */
+        function up(){
+            mouseDownFlag=false;
+        }
+        var color=document.createElement("td");
+        var color1=document.createElement("td");
+        /*
+            改变选中表格的颜色背景
+        */
+        //经过
+        function changeColor(obj){
+            if(mouseDownFlag){
+                if(isFirst){
+                    end[0] = parseInt(s.charAt(0)+s.charAt(1));
+                    end[1] = parseInt(s.charAt(2)+s.charAt(3));
+                    changeTab();
+                }else {
+                    s = obj.id;
+                    end[0] = parseInt(s.charAt(0)+s.charAt(1));
+                    end[1] = parseInt(s.charAt(2)+s.charAt(3));
+                    changeTab();
+                }
+                isFirst = false;
+                color=obj;
+                color1=obj;
+            }
+        }
+        //点击
+        function changecolor(obj) {
+            var s = obj.id;
+            if(isFirst){
+                start[0] = parseInt(s.charAt(0)+s.charAt(1));
+                start[1] = parseInt(s.charAt(2)+s.charAt(3));
+                end[0] = parseInt(s.charAt(0)+s.charAt(1));
+                end[1] = parseInt(s.charAt(2)+s.charAt(3));
+                changeTab();
+            }else {
+                s = obj.id;
+                start[0]=end[0];
+                start[1]=end[1];
+                end[0] = parseInt(s.charAt(0)+s.charAt(1));
+                end[1] = parseInt(s.charAt(2)+s.charAt(3));
+                changeTab();
+            }
+            isFirst = false;
+        }
+        // function changecolor1(ob,h) {
+        //     ob.style.backgroundColor=h;
+        // }
+        var tabId = "";
+        var tabId2 = "";
+        //改变选定区域颜色
+        function changeTab() {
+            for(var i = start[0];i<end[0]+1;i++){
+                for(var j = start[1];j<end[1]+1;j++){
+                    tabId = "";
+                    if(i<10){
+                        tabId +='0'+i;
+                    }else {
+                        tabId +=i;
+                    }
+                    if(j<10){
+                        tabId +='0'+j;
+                    }else {
+                        tabId +=j;
+                    }
+                    document.getElementById(tabId).style.backgroundColor="yellow";
+                }
+            }
+        }
+        //接受上一个页面传递的json数据
+        function clc() {
+            for(var i = start[0];i<end[0]+1;i++){
+                for(var j = start[1];j<end[1]+1;j++){
+                    tabId="";                                                              //nid
+                    if(i<10){
+                        tabId +='0'+i;
+                    }else {
+                        tabId +=i;
+                    }
+                    if(j<10){
+                        tabId +='0'+j;
+                    }else {
+                        tabId +=j;
+                    }
+                    if(j<11){
+                        document.getElementById(tabId).style.backgroundColor="#c0dbf7";
+                    }else {
+                        document.getElementById(tabId).style.backgroundColor="#ffffff";
+                    }
+
+                }
+            }
+            start[0]=0;start[1]=0;
+            end[0]=0;end[1]=0;
+        }
+        /*将集装箱分配给选好的表格*/
+        var numList=0;
+        //n为需要分配的集装箱数
+        function fuzhi(){
+
+            var len20 = 0;
+            var len40 = 0;
+            for(var i=0;i<list.length;i++){
+                list[i].Size == 20 ? len20++ : len40++;
+            }
+            var beinum = 1;
+            var x1=start[0];
+            var y1=start[1];
+            var x2=end[0];
+            var y2=end[1];
+            var xy=(x2-x1+1)*(y2-y1+1)*6;
+            if(y2<=10){
+                if(xy<len20){
+                    alert("所选20尺寸集装箱堆场不足会导致部分集装箱无法分配，请撤销后重新选择！")
+                }else{
+                    for(var i = start[0];i<end[0]+1;i++){
+                        var beiwei ="";
+                        for(var j = start[1];j<end[1]+1;j++){
+                            tabId="";
+                            if(i<10){
+                                tabId +='0'+i;
+                            }else {
+                                tabId +=i;
+                            }
+                            if(j<10){
+                                tabId +='0'+j;
+                            }else {
+                                tabId +=j;
+                            }
+                            beiwei = a + tabId;
+                            document.getElementById(tabId).style.backgroundColor="#c0dbf7";
+                            for(var k=0;k<list.length;k++){
+                                if(list[k].Size==20 && list[k].BayNo=="null" &&beinum<=6){
+                                    beiwei +="0"+beinum;
+                                    list[k].BayNo=beiwei;
+                                    if(j<9){
+                                        list[numList].GantryCraneTime=9-j;
+                                    }else {
+                                        list[numList].GantryCraneTime=j-9;
+                                    }
+                                    document.getElementById(tabId).innerText=beinum;
+                                    if(beinum==6){
+                                        document.getElementById(tabId).style.backgroundColor="red";
+                                    }else{
+                                        document.getElementById(tabId).style.backgroundColor="green";
+                                    }
+                                    // document.getElementById(tabId).style.backgroundColor="#c0dbf7";
+                                    // document.getElementById(tabId).innerText=beinum;
+                                    beiwei = beiwei.substring(0,7);
+                                    beinum++;
+                                }else{
+                                    if(beinum >6){
+                                    beinum=1;
+                                    break;}
+                                }
+                            }
+                            // if(numList<len20){
+                            //     if((len20-numList)>=6){
+                            //         for(var k=1;k<=6;k++){
+                            //             beiwei +="0"+k;
+                            //             list[numList].BayNo=beiwei;
+                            //             if(j<17){
+                            //                 list[numList].GantryCraneTime=17-j;
+                            //             }else {
+                            //                 list[numList].GantryCraneTime=j-17;
+                            //             }
+                            //             beiwei = beiwei.substring(0,7);
+                            //             numList++;
+                            //         }
+                            //     }else {
+                            //         var l=numList;
+                            //         for(var k=1;k<=list.length-l;k++){
+                            //             beiwei +="0"+k;
+                            //             list[numList].BayNo=beiwei;
+                            //             if(j<17){
+                            //                 list[numList].GantryCraneTime=17-j;
+                            //             }else {
+                            //                 list[numList].GantryCraneTime=j-17;
+                            //             }
+                            //             beiwei = beiwei.substring(0,7);
+                            //             numList++;
+                            //         }
+                            //     }
+                            // }
+                            // if(num>=6){
+                            //     document.getElementById(tabId).innerText=6;
+                            //     document.getElementById(tabId).style.backgroundColor="red";
+                            //     num = num-6;
+                            // }else {
+                            //     document.getElementById(tabId).innerText=num;
+                            //     if(num == 0){
+                            //         document.getElementById(tabId).style.backgroundColor="#c0dbf7";
+                            //     }else {
+                            //         document.getElementById(tabId).style.backgroundColor="green";
+                            //     }
+                            //
+                            //     num = 0;
+                            // }
+                        }
+                        tabId = "";                                                             //nid
+                    }
+                    for(var x=0;x<list.length;x++){
+                        if(list[x].BayNo=="null"){
+                            alert("请继续分配40尺寸的集装箱！");
+                            break;
+                        }
+                    }
+                    clcTab();
+                    for(var i=0;i<list.length;i++){
+                        insRow(list,i)
+                    }
+                }
+            }else{
+                if(xy<len40){
+                    alert("所选40尺寸集装箱堆场不足会导致部分集装箱无法分配，请撤销后重新选择！");
+                }else{
+                    for(var i = start[0];i<end[0]+1;i++){
+                        var beiwei ="";
+                        var beiwei2="";
+                        for(var j = start[1];j<end[1]+1;j++){
+                            if(j==11||j==13){
+                                tabId="";
+                                tabId2="";
+                                if(i<10){
+                                    tabId +='0'+i;
+                                }else {
+                                    tabId +=i;
+                                }
+                                tabId2 = tabId;
+                                tabId +=j;
+                                tabId2 +=(j+1);
+                                beiwei = a + tabId;
+                                beiwei2 = a + tabId2;
+                                document.getElementById(tabId).style.backgroundColor="#ffffff";
+                                document.getElementById(tabId2).style.backgroundColor="#ffffff";
+                                for(var k=0;k<list.length;k++){
+                                    if(list[k].Size==40 && list[k].BayNo=="null" &&beinum<=6){
+                                        beiwei +="0"+beinum;
+                                        beiwei2 +="0"+beinum;
+                                        list[k].BayNo=beiwei;
+                                        list[k].BayNo40=beiwei2;
+                                        list[numList].GantryCraneTime=j-9;
+                                        document.getElementById(tabId).innerText=beinum;
+                                        document.getElementById(tabId2).innerText=beinum;
+                                        if(beinum==6){
+                                            document.getElementById(tabId).style.backgroundColor="red";
+                                            document.getElementById(tabId2).style.backgroundColor="red";
+                                        }else{
+                                            document.getElementById(tabId).style.backgroundColor="green";
+                                            document.getElementById(tabId2).style.backgroundColor="green";
+                                        }
+                                        beiwei = beiwei.substring(0,7);
+                                        beiwei2 = beiwei2.substring(0,7);
+                                        beinum++;
+                                    }else{
+                                        if(beinum >6){
+                                            beinum=1;
+                                            break;}
+                                    }
+                                }
+                            }
+                        }
+                        tabId = "";                                                             //nid
+                        tabId2="";
+                    }
+                    for(var x=0;x<list.length;x++){
+                        if(list[x].BayNo=="null"){
+                            alert("请继续分配20尺寸的集装箱！");
+                            break;
+                        }
+                    }
+                    clcTab();
+                    for(var i=0;i<list.length;i++){
+                        insRow(list,i)
+                    }
+                }
+            }
+        }
+        /*
+           将数据传给下一个页面,并跳转
+        */
+        function tiao() {
+            var gareenText1=JSON.stringify(list);
+            localStorage.setItem("text1",gareenText1);
+            console.log(list);
+            location.href='./MainInterface.html';
+        }
+        //函数设置表格信息
+    </script>
+</head>
+<body>
+<!--主标题-->
+<img src="铁水联运logo.png">
+<h1 id="title" align="center">堆场选择界面</h1>
+<div  id="a" align="center" style="width: 80%;margin:0 auto">
+    <p id="AorB" align="center" >A01</p>
+    <table id="t1" onmousedown="down()" onmouseup="up()" align="center">
+            <tr>
+                <th></th>
+                <th>01</th>
+                <th>02</th>
+                <th>03</th>
+                <th>04</th>
+                <th>05</th>
+                <th>06</th>
+                <th>07</th>
+                <th>08</th>
+                <th>09</th>
+                <th>10</th>
+                <th>11</th>
+                <th>12</th>
+                <th>13</th>
+                <th>14</th>
+                <!--<th>15</th>-->
+                <!--<th>16</th>-->
+                <!--<th>17</th>-->
+                <!--<th>18</th>-->
+                <!--<th>19</th>-->
+                <!--<th>20</th>-->
+                <!--<th>21</th>-->
+                <!--<th>22</th>-->
+                <!--<th>23</th>-->
+            </tr>
+            <tr>
+                <th>01</th>
+                <td  id="0101" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0102" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0103" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0104" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0105" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0106" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0107" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0108" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0109" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0110" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0111" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0112" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0113" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0114" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="0115" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0116" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0117" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0118" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0119" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0120" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0121" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0122" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0123" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>02</th>
+                <td  id="0201" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0202" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0203" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0204" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0205" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0206" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0207" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0208" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0209" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0210" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0211" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0212" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0213" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0214" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="0215" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0216" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0217" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0218" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0219" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0220" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0221" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0222" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0223" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>03</th>
+                <td  id="0301" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0302" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0303" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0304" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0305" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0306" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0307" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0308" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0309" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0310" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0311" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0312" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0313" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0314" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="0315" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0316" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0317" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0318" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0319" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0320" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0321" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0322" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0323" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>04</th>
+                <td  id="0401" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0402" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0403" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0404" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0405" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0406" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0407" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0408" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0409" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0410" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0411" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0412" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0413" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0414" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="0415" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0416" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0417" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0418" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0419" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0420" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0421" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0422" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0423" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>05</th>
+                <td  id="0501" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0502" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0503" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0504" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0505" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0506" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0507" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0508" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0509" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0510" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0511" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0512" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0513" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0514" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="0515" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0516" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0517" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0518" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0519" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0520" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0521" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0522" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0523" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>06</th>
+                <td  id="0601" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0602" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0603" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0604" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0605" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0606" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0607" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0608" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0609" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0610" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0611" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0612" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0613" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0614" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="0615" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0616" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0617" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0618" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0619" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0620" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0621" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0622" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0623" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>07</th>
+                <td  id="0701" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0702" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0703" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0704" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0705" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0706" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0707" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0708" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0709" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0710" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0711" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0712" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0713" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0714" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="0715" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0716" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0717" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0718" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0719" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0720" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0721" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0722" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0723" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>08</th>
+                <td  id="0801" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0802" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0803" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0804" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0805" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0806" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0807" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0808" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0809" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0810" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0811" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0812" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0813" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0814" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="0815" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0816" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0817" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0818" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0819" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0820" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0821" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0822" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0823" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>09</th>
+                <td  id="0901" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0902" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0903" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0904" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0905" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0906" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0907" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0908" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0909" oclass="a" nmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0910" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0911" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0912" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0913" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="0914" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="0915" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0916" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0917" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0918" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0919" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0920" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0921" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0922" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="0923" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>10</th>
+                <td  id="1001" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1002" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1003" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1004" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1005" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1006" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1007" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1008" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1009" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1010" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1011" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1012" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1013" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1014" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="1015" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1016" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1017" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1018" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1019" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1020" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1021" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1022" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1023" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>11</th>
+                <td  id="1101" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1102" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1103" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1104" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1105" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1106" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1107" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1108" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1109" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1110" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1111" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1112" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1113" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1114" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="1115" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1116" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1117" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1118" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1119" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1120" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1121" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1122" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1123" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>12</th>
+                <td  id="1201" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1202" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1203" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1204" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1205" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1206" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1207" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1208" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1209" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1210" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1211" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1212" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1213" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1214" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="1215" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1216" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1217" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1218" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1219" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1220" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1221" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1222" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1223" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>13</th>
+                <td  id="1301" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1302" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1303" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1304" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1305" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1306" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1307" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1308" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1309" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1310" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1311" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1312" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1313" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1314" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="1315" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1316" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1317" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1318" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1319" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1320" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1321" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1322" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1323" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+            <tr>
+                <th>14</th>
+                <td  id="1401" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1402" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1403" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1404" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1405" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1406" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1407" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1408" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1409" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1410" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1411" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1412" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1413" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <td  id="1414" class="t40" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>
+                <!--<td  id="1415" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1416" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1417" class="a" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1418" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1419" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1420" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1421" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1422" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+                <!--<td  id="1423" onmousedown="changecolor(this)" onmouseover="changeColor(this)" >0</td>-->
+            </tr>
+        </table>
+    <p align="right">注意:右侧白色区域为尺寸40的集装箱堆放区域</p>
+</div>
+
+<div align="center">
+    <button onclick="clc()">撤销</button>
+    <button onclick="fuzhi()">保存</button>
+    <button onclick="tiao()">确定</button>
+</div>
+
+
+<div id="c" style=" height:450px; overflow:scroll;overflow:scroll;overflow-x:hidden" align="center">
+    <table id="t2" align="center">
+        <tr>
+            <th>编号</th>
+            <th>类别</th>
+            <th>来源</th>
+            <th>流向</th>
+            <th>提单号</th>
+            <th>卸货港</th>
+            <th>目的港</th>
+            <th>装货港</th>
+            <th>尺寸</th>
+            <th>贝位</th>
+            <th>贝位</th>
+        </tr>
+    </table>
+</div>
+<script>
+    var gareenText1=localStorage.getItem("text");
+    var list=JSON.parse(gareenText1);
+    for(var i=0;i<list.length;i++){
+        insRow(list,i);
+    }
+
+    document.getElementById("AorB").innerText=a;
+
+    function insRow(List,n)
+    {// switch( List[n].Type) {
+        //     case 0:x.insertCell(1).innerHTML="出口箱";break;
+        //     case 1:x.insertCell(1).innerHTML="进口箱";break;
+        //     case 2:x.insertCell(1).innerHTML="存储箱";break;
+        //     case 3:x.insertCell(1).innerHTML="中转箱";break;
+        //     default:break;
+        // }
+        // switch( List[n].Source) {
+        //     case 0:x.insertCell(2).innerHTML="公路";break;
+        //     case 1:x.insertCell(2).innerHTML="水路";break;
+        //     case 2:x.insertCell(2).innerHTML="铁路";break;
+        //     default:break;
+        // }
+        // switch( List[n].Whereabouts) {
+        //     case 0:x.insertCell(3).innerHTML="船舶";break;
+        //     case 1:x.insertCell(3).innerHTML="火车";break;
+        //     default:break;
+        // }
+        var x=document.getElementById('t2').insertRow(n+1);
+        x.insertCell(0).innerHTML=List[n].SN;
+        x.insertCell(1).innerHTML=List[n].Trade;
+        x.insertCell(2).innerHTML="铁路";
+        x.insertCell(3).innerHTML="船舶";
+        x.insertCell(4).innerHTML=List[n].BillOfLadingNumber;
+        x.insertCell(5).innerHTML=List[n].UnloadingPort;
+        x.insertCell(6).innerHTML=List[n].DestinationPort;
+        x.insertCell(7).innerHTML=List[n].LoadingPort;
+        x.insertCell(8).innerHTML=List[n].Size;
+        x.insertCell(9).innerHTML=List[n].BayNo;
+        if(List[n].Size==20){
+            x.insertCell(10).innerHTML="x";
+        }else {
+            x.insertCell(10).innerHTML=List[n].BayNo40;
+        }
+
+    }
+    function clcTab() {
+        var cTab = document.getElementById("t2");
+        var rowNum=cTab.rows.length;
+        for(var i=1;i<rowNum;i++){
+            cTab.deleteRow(i);
+            rowNum --;
+            i--;
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>港口铁水联运</title>
+</head>
+<body>
+<video   width="1400" height="600" controls="controls" type="video/mp4" preload="auto">
+    <source src="中控室.mp4" autostart="false">
+    Your browser does not support the video tag.
+</video>
+<!--<div align="center">-->
+    <!--<button onclick="ok()">下一步</button>-->
+<!--</div>-->
+<script>
+    var vid = document.getElementsByTagName('video')[0];
+    vid.addEventListener('ended',function(){        //视频播放完的事件
+        //这里写跳转
+        window.location = "./modechoose.html";
+    },false);
+    // function ok() {
+    //     location.href='./modechoose.html';
+    // }
+</script>
+</body>
+</html>

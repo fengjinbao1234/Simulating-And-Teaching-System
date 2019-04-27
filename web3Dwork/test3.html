@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>港口铁水联运仿真</title>
+    <style>
+        .inputA .plus,
+        .inputA .num{
+            height: 20px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .inputA .num{
+            border-top: 1px solid #999;
+            border-bottom: 1px solid #999;
+            background-color: #C0DBF7;
+            border-left: 0;
+            border-right: 0;
+            width: 130px;
+        }
+        .input .plus{
+            border: 1px solid #C0DBF7;
+            background-color: #C0DBF7;
+            display: inline-block;
+            text-decoration: none;
+            width: 70px;
+        }
+        a.plus{
+            font-size: 30px;
+        }
+        a.num{
+            font-size: 25px;
+        }
+        #title{
+            margin-top: -50px;
+        }
+        /* 开始设置网页样式 */
+        body{
+            background-color: #c0dbf7;
+        } /*设置背景图片*/
+        /* class=a的div元素的外边距在原有的基础上向下移动100px*/
+        #bcqx{
+            margin-top: -200px;
+        }
+        #b{
+            margin-top: 20px;
+            text-align:center
+        }
+        #c{
+            margin-top: 20px;
+            text-align:center;
+        }
+        /* class=a的div元素的外边距在原有的基础上向下移动100px*/
+        #box{
+            display: flex;
+        }
+        #fix{
+            width:400px;
+            height: 20px;
+            font-size: 20px;
+            margin:auto;
+        }
+        div.fixed{
+            width:100px;
+            height: 20px;
+            font-size: 20px;
+            margin:auto;
+        }
+        /*表格设置为有边框*/
+        #zc{
+            margin-top: 20px;
+        }
+        table{
+            border-collapse: collapse;
+        }
+        #che td,th{
+            border: 0.5px solid #000000;
+            width: 200px;
+            height: 30px;
+            text-align: center;
+            font-size: 15px;
+            user-select: none;
+        }
+        #t2 td,th{
+            border: 0.5px solid #000000;
+            width: 100px;
+            height: 20px;
+            text-align: center;
+            font-size: 15px;
+            user-select: none;
+        }
+        /*单元格的边框为0.5,颜色为黑,长30,高20,内容居中,字体大小为15*/
+        #zc td{
+            border: 1px solid #000000;
+            width: 50px;
+            height: 30px;
+            text-align: center;
+            font-size: 15px;
+            user-select: none;
+        }
+        #zc th{
+            font-size: 20px;
+        }
+        /* html弹窗样式设计 */
+        div.selectBox{display:none;position:fixed;top:30%;left:40%;width:400px;height:300px;border:3px solid black;background-color:white;z-index:1002}
+        div.shelter{display:none;position:fixed;top:0px;left:0px;width:100%;height:100%;background-color:black;opacity:0.6;z-index:1001}
+    </style>
+
+</head>
+<body>
+<img src="铁水联运logo.png">
+<h1 id="title" align="center">堆场到船舶集装箱调度</h1>
+
+<div id="box">
+    <div id="fix">选择需要显示的侧剖视图的堆场号以及列数：</div>
+    <div class="fixed">
+        <select name="c1" class="my_selected" data-edit-select="1" 
+                onmousedown="if(this.options.length>3){this.size=8}"
+                onblur="this.size=0" onchange="this.size=0"  style="position:absolute;z-index:8;">
+            <option value="A01">A01</option>
+            <option value="A02">A02</option>
+            <option value="A03">A03</option>
+            <option value="A04">A04</option>
+            <option value="B01">B01</option>
+            <option value="B02">B02</option>
+            <option value="B03">B03</option>
+            <option value="B04">B04</option>
+
+        </select>
+    </div>
+    <div class="fixed">
+        <select name="c2" class="my_selected" data-edit-select="1" 
+                onmousedown="if(this.options.length>4){this.size=8}"
+                onblur="this.size=0" onchange="this.size=0"  style="position:absolute;z-index:8;">
+            <option value="01">第1列</option>
+            <option value="02">第2列</option>
+            <option value="03">第3列</option>
+            <option value="04">第4列</option>
+            <option value="05">第5列</option>
+            <option value="06">第6列</option>
+            <option value="07">第7列</option>
+            <option value="08">第8列</option>
+            <option value="09">第9列</option>
+            <option value="10">第10列</option>
+            <option value="11">第11列</option>
+            <!--<option value="12">第12列</option>-->
+            <option value="13">第13列</option>
+            <!--<option value="14">第14列</option>-->
+            <!--<option value="15">第15列</option>-->
+            <!--<option value="16">第16列</option>-->
+            <!--<option value="17">第17列</option>-->
+            <!--<option value="18">第18列</option>-->
+            <!--<option value="19">第19列</option>-->
+            <!--<option value="20">第20列</option>-->
+            <!--<option value="21">第21列</option>-->
+            <!--<option value="22">第22列</option>-->
+            <!--<option value="23">第23列</option>-->
+        </select>
+    </div>
+</div>
+<div align="center">
+    <table id="zc">
+        <tr>
+            <th>6</th>
+            <td id="0106" onmousedown="changecolor(this)"></td>
+            <td id="0206" onmousedown="changecolor(this)"></td>
+            <td id="0306" onmousedown="changecolor(this)"></td>
+            <td id="0406" onmousedown="changecolor(this)"></td>
+            <td id="0506" onmousedown="changecolor(this)"></td>
+            <td id="0606" onmousedown="changecolor(this)"></td>
+            <td id="0706" onmousedown="changecolor(this)"></td>
+            <td id="0806" onmousedown="changecolor(this)"></td>
+            <td id="0906" onmousedown="changecolor(this)"></td>
+            <td id="1006" onmousedown="changecolor(this)"></td>
+            <td id="1106" onmousedown="changecolor(this)"></td>
+            <td id="1206" onmousedown="changecolor(this)"></td>
+            <td id="1306" onmousedown="changecolor(this)"></td>
+            <td id="1406" onmousedown="changecolor(this)"></td>
+        </tr>
+        <tr>
+            <th>5</th>
+            <td id="0105" onmousedown="changecolor(this)"></td>
+            <td id="0205" onmousedown="changecolor(this)"></td>
+            <td id="0305" onmousedown="changecolor(this)"></td>
+            <td id="0405" onmousedown="changecolor(this)"></td>
+            <td id="0505" onmousedown="changecolor(this)"></td>
+            <td id="0605" onmousedown="changecolor(this)"></td>
+            <td id="0705" onmousedown="changecolor(this)"></td>
+            <td id="0805" onmousedown="changecolor(this)"></td>
+            <td id="0905" onmousedown="changecolor(this)"></td>
+            <td id="1005" onmousedown="changecolor(this)"></td>
+            <td id="1105" onmousedown="changecolor(this)"></td>
+            <td id="1205" onmousedown="changecolor(this)"></td>
+            <td id="1305" onmousedown="changecolor(this)"></td>
+            <td id="1405" onmousedown="changecolor(this)"></td>
+        </tr>
+        <tr>
+            <th>4</th>
+            <td id="0104" onmousedown="changecolor(this)"></td>
+            <td id="0204" onmousedown="changecolor(this)"></td>
+            <td id="0304" onmousedown="changecolor(this)"></td>
+            <td id="0404" onmousedown="changecolor(this)"></td>
+            <td id="0504" onmousedown="changecolor(this)"></td>
+            <td id="0604" onmousedown="changecolor(this)"></td>
+            <td id="0704" onmousedown="changecolor(this)"></td>
+            <td id="0804" onmousedown="changecolor(this)"></td>
+            <td id="0904" onmousedown="changecolor(this)"></td>
+            <td id="1004" onmousedown="changecolor(this)"></td>
+            <td id="1104" onmousedown="changecolor(this)"></td>
+            <td id="1204" onmousedown="changecolor(this)"></td>
+            <td id="1304" onmousedown="changecolor(this)"></td>
+            <td id="1404" onmousedown="changecolor(this)"></td>
+        </tr>
+        <tr>
+            <th>3</th>
+            <td id="0103" onmousedown="changecolor(this)"></td>
+            <td id="0203" onmousedown="changecolor(this)"></td>
+            <td id="0303" onmousedown="changecolor(this)"></td>
+            <td id="0403" onmousedown="changecolor(this)"></td>
+            <td id="0503" onmousedown="changecolor(this)"></td>
+            <td id="0603" onmousedown="changecolor(this)"></td>
+            <td id="0703" onmousedown="changecolor(this)"></td>
+            <td id="0803" onmousedown="changecolor(this)"></td>
+            <td id="0903" onmousedown="changecolor(this)"></td>
+            <td id="1003" onmousedown="changecolor(this)"></td>
+            <td id="1103" onmousedown="changecolor(this)"></td>
+            <td id="1203" onmousedown="changecolor(this)"></td>
+            <td id="1303" onmousedown="changecolor(this)"></td>
+            <td id="1403" onmousedown="changecolor(this)"></td>
+        </tr>
+        <tr>
+            <th>2</th>
+            <td id="0102" onmousedown="changecolor(this)"></td>
+            <td id="0202" onmousedown="changecolor(this)"></td>
+            <td id="0302" onmousedown="changecolor(this)"></td>
+            <td id="0402" onmousedown="changecolor(this)"></td>
+            <td id="0502" onmousedown="changecolor(this)"></td>
+            <td id="0602" onmousedown="changecolor(this)"></td>
+            <td id="0702" onmousedown="changecolor(this)"></td>
+            <td id="0802" onmousedown="changecolor(this)"></td>
+            <td id="0902" onmousedown="changecolor(this)"></td>
+            <td id="1002" onmousedown="changecolor(this)"></td>
+            <td id="1102" onmousedown="changecolor(this)"></td>
+            <td id="1202" onmousedown="changecolor(this)"></td>
+            <td id="1302" onmousedown="changecolor(this)"></td>
+            <td id="1402" onmousedown="changecolor(this)"></td>
+        </tr>
+        <tr>
+            <th>1</th>
+            <td id="0101" onmousedown="changecolor(this)"></td>
+            <td id="0201" onmousedown="changecolor(this)"></td>
+            <td id="0301" onmousedown="changecolor(this)"></td>
+            <td id="0401" onmousedown="changecolor(this)"></td>
+            <td id="0501" onmousedown="changecolor(this)"></td>
+            <td id="0601" onmousedown="changecolor(this)"></td>
+            <td id="0701" onmousedown="changecolor(this)"></td>
+            <td id="0801" onmousedown="changecolor(this)"></td>
+            <td id="0901" onmousedown="changecolor(this)"></td>
+            <td id="1001" onmousedown="changecolor(this)"></td>
+            <td id="1101" onmousedown="changecolor(this)"></td>
+            <td id="1201" onmousedown="changecolor(this)"></td>
+            <td id="1301" onmousedown="changecolor(this)"></td>
+            <td id="1401" onmousedown="changecolor(this)"></td>
+        </tr>
+        <tr>
+            <th></th>
+            <th>01</th>
+            <th>02</th>
+            <th>03</th>
+            <th>04</th>
+            <th>05</th>
+            <th>06</th>
+            <th>07</th>
+            <th>08</th>
+            <th>09</th>
+            <th>10</th>
+            <th>11</th>
+            <th>12</th>
+            <th>13</th>
+            <th>14</th>
+        </tr>
+    </table>
+</div>
+<div align="center">
+    <button onclick="show()">显示</button>
+    <button onclick="save()">保存</button>
+    <button onclick="ok1()">确定</button>
+</div>
+
+
+<div id="b" style=" height:250px; overflow:scroll;overflow:scroll;overflow-x:hidden" align="center">
+    <h align="center">车辆分配</h>
+    <table id="che" align="center">
+        <tr align="center">
+            <th id="hc1"><img id="car1" src="che.png" width="90" height="40" ><br><b>1号车</b></th>
+            <th id="hc2"><img id="car2" src="che.png" width="90" height="40" ><br><b>2号车</b></th>
+            <th id="hc3"><img id="car3" src="che.png" width="90" height="40" ><br><b>3号车</b></th>
+            <th id="hc4"><img id="car4" src="che.png" width="90" height="40" ><br><b>4号车</b></th>
+            <th id="hc5"><img id="car5" src="che.png" width="90" height="40" ><br><b>5号车</b></th>
+            <th id="hc6"><img id="car6" src="che.png" width="90" height="40" ><br><b>6号车</b></th>
+            <th id="hc7"><img id="car7" src="che.png" width="90" height="40" ><br><b>7号车</b></th>
+        </tr>
+        <tr>
+            <td>
+                <div class="inputA">
+                    <a id="011" type="text" class="num">null</a><a id="011a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="012" type="text" class="num">null</a><a id="012a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="013" type="text" class="num">null</a><a id="013a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="014" type="text" class="num">null</a><a id="014a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="015" type="text" class="num">null</a><a id="015a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="016" type="text" class="num">null</a><a id="016a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="017" type="text" class="num">null</a><a id="017a" class="plus">+</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="inputA">
+                    <a id="021" type="text" class="num">null</a><a id="021a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="022" type="text" class="num">null</a><a id="022a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="023" type="text" class="num">null</a><a id="023a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="024" type="text" class="num">null</a><a id="024a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="025" type="text" class="num">null</a><a id="025a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="026" type="text" class="num">null</a><a id="026a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="027" type="text" class="num">null</a><a id="027a" class="plus">+</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="inputA">
+                    <a id="031" type="text" class="num">null</a><a id="031a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="032" type="text" class="num">null</a><a id="032a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="033" type="text" class="num">null</a><a id="033a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="034" type="text" class="num">null</a><a id="034a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="035" type="text" class="num">null</a><a id="035a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="036" type="text" class="num">null</a><a id="036a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="037" type="text" class="num">null</a><a id="037a" class="plus">+</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="inputA">
+                    <a id="041" type="text" class="num">null</a><a id="041a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="042" type="text" class="num">null</a><a id="042a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="043" type="text" class="num">null</a><a id="043a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="044" type="text" class="num">null</a><a id="044a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="045" type="text" class="num">null</a><a id="045a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="046" type="text" class="num">null</a><a id="046a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="047" type="text" class="num">null</a><a id="047a" class="plus">+</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="inputA">
+                    <a id="051" type="text" class="num">null</a><a id="051a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="052" type="text" class="num">null</a><a id="052a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="053" type="text" class="num">null</a><a id="053a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="054" type="text" class="num">null</a><a id="054a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="055" type="text" class="num">null</a><a id="055a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="056" type="text" class="num">null</a><a id="056a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="057" type="text" class="num">null</a><a id="057a" class="plus">+</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="inputA">
+                    <a id="061" type="text" class="num">null</a><a id="061a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="062" type="text" class="num">null</a><a id="062a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="063" type="text" class="num">null</a><a id="063a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="064" type="text" class="num">null</a><a id="064a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="065" type="text" class="num">null</a><a id="065a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="066" type="text" class="num">null</a><a id="066a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="067" type="text" class="num">null</a><a id="067a" class="plus">+</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="inputA">
+                    <a id="071" type="text" class="num">null</a><a id="071a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="072" type="text" class="num">null</a><a id="072a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="073" type="text" class="num">null</a><a id="073a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="074" type="text" class="num">null</a><a id="074a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="075" type="text" class="num">null</a><a id="075a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="076" type="text" class="num">null</a><a id="076a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="077" type="text" class="num">null</a><a id="077a" class="plus">+</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="inputA">
+                    <a id="081" type="text" class="num">null</a><a id="081a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="082" type="text" class="num">A0110106</a><a id="082a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="083" type="text" class="num">null</a><a id="083a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="084" type="text" class="num">null</a><a id="084a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="085" type="text" class="num">null</a><a id="085a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="086" type="text" class="num">null</a><a id="086a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="087" type="text" class="num">null</a><a id="087a" class="plus">+</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="inputA">
+                    <a id="091" type="text" class="num">null</a><a id="091a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="092" type="text" class="num">null</a><a id="092a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="093" type="text" class="num">null</a><a id="093a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="094" type="text" class="num">null</a><a id="094a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="095" type="text" class="num">null</a><a id="095a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="096" type="text" class="num">null</a><a id="096a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="097" type="text" class="num">null</a><a id="097a" class="plus">+</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="inputA">
+                    <a id="101" type="text" class="num">null</a><a id="101a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="102" type="text" class="num">null</a><a id="102a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="103" type="text" class="num">null</a><a id="103a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="104" type="text" class="num">null</a><a id="104a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="105" type="text" class="num">null</a><a id="105a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="106" type="text" class="num">null</a><a id="106a" class="plus">+</a>
+                </div>
+            </td>
+            <td>
+                <div class="inputA">
+                    <a id="107" type="text" class="num">null</a><a id="107a" class="plus">+</a>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div id="c" style=" height:450px; overflow:scroll;overflow:scroll;overflow-x:hidden" align="center">
+    <table id="t2" align="center">
+        <tr>
+            <th>编号</th>
+            <th>类别</th>
+            <th>来源</th>
+            <th>流向</th>
+            <th>提单号</th>
+            <th>卸货港</th>
+            <th>目的港</th>
+            <th>装货港</th>
+            <th>尺寸</th>
+            <th>贝位</th>
+            <th>车辆</th>
+            <th>运输顺序</th>
+        </tr>
+    </table>
+</div>
+<div id="selectBox" class="selectBox">
+    <!--点击集装箱弹出的窗口-->
+    <div align="center">
+        <p>为该集装箱设置出发时间</p>
+        <input type="time" id="user_date" />
+        <p>为该集装箱选择车辆</p>
+        <select name="car">
+            <option value="1">车辆1</option>
+            <option value="0">车辆2</option>
+            <option value="0">车辆3</option>
+            <option value="0">车辆4</option>
+        </select>
+    </div>
+    <div id="bcqx" align="center">
+        <button onclick="ok()">保存</button>
+        <button onclick="cancel()">取消</button>
+    </div>
+
+
+</div>
+<div id="shelter" class="shelter"></div>
+
+<script>
+    //接受上个页面传来的数据
+    var gareenText=localStorage.getItem("text1");
+    var list=JSON.parse(gareenText);
+    var choCarNum=localStorage.getItem("jika2");
+    var choCarNumInt = parseInt(choCarNum);
+    console.log(list);
+    var beiwei="";//保存当前点击的贝位
+    var canFp=false;//判断可否分配车辆
+    var first=true;//保证一个点击一个贝位不会重复分配
+    var sxNum = 0;
+    var dc=document.getElementsByName("c1")[0].value;
+    var ls=document.getElementsByName("c2")[0].value;
+    show();
+    function show() {
+        clcB();
+        dc=document.getElementsByName("c1")[0].value;
+        ls=document.getElementsByName("c2")[0].value;
+        for(var i=0;i<list.length;i++){
+            var ldc = list[i].BayNo.substring(0,3);
+            var lls= list[i].BayNo.substring(5,7);
+            if(dc==ldc && lls==ls){
+                var s=list[i].BayNo.substring(3,5)+list[i].BayNo.substring(7,9);
+                document.getElementById(s).innerText =list[i].BayNo;
+                document.getElementById(s).style.backgroundColor="yellow";
+            }
+        }
+    }
+    function clcB() {
+        for(var i=1;i<15;i++){
+            for(var j=1;j<7;j++){
+                var s ="";
+                if(i<=9){
+                    s =s+"0"+i;
+                }else {
+                    s =s+i;
+                }
+                s=s+"0"+j;
+                document.getElementById(s).innerText = null;
+                document.getElementById(s).style.backgroundColor="#c0dbf7";
+            }
+        }
+    }
+    for(var i=0;i<list.length;i++){
+        insRow(list,i,'t2');
+    }
+    var cc = true;
+    var che ="che.png";
+    var che1="che1.png";
+    function cheClick(obj) {
+        if(cc){
+            obj.src=che1;
+            cc = false;
+        }else {
+            obj.src=che;
+            cc = true;
+        }
+    }
+    function create(data) {
+        //通过id找到对应的表格
+        var mytable = document.getElementById("zc");
+        //依次将颜色变为蓝色
+        for(var i=0;i<data.length;i++){
+            var rowindex=6-data[i].high;
+            var cellindex=data[i].rowIndex-1;
+            mytable.rows[rowindex].cells[cellindex].style.background="blue";
+        }
+    }
+    // function clcCarImg() {
+    //     document.getElementById("car1").src =che1;
+    //     document.getElementById("car2").src =che1;
+    //     document.getElementById("car3").src =che1;
+    //     document.getElementById("car4").src =che1;
+    // }
+    //点击集装箱格子弹出对应的弹框
+    function changecolor(obj) {
+        var thId = obj.id;
+        var ss = dc+ thId.substring(0,2) +ls+thId.substring(2,4);
+        if(obj.innerHTML!=""){
+            beiwei=ss;
+            var f1 =thId.substring(0,3)+changeNum(thId.charAt(3),1,"-");
+            // if(ls==11||ls==13){
+                obj.style.backgroundColor="#5ef746";
+            // }else{
+            //     document.getElementById(f1).style.backgroundColor="#5ef746";
+            //     obj.style.backgroundColor="#5ef746";
+            // }
+            first=true;
+        }
+    }
+    //取消弹框
+    function cancel() {
+        document.getElementById("selectBox").style.display = "none";
+        document.getElementById("shelter").style.display = "none";
+    }
+    function ok() {
+        var time=document.getElementById("user_date").value;
+        // alert(time);
+        console.log(time);
+        document.getElementById("selectBox").style.display = "none";
+        document.getElementById("shelter").style.display = "none";
+    }
+    //跳转到下个页面
+    function ok1() {
+        localStorage.setItem("taskKind",2);
+        location.href="./施放指令中控室动画.html"
+    }
+    function save() {
+        var gareenText3=JSON.stringify(list);
+        localStorage.setItem("text3",gareenText3);
+        alert("已保存");
+    }
+    function insRow(List,n,s)
+    {
+        var x=document.getElementById(s).insertRow(n+1);
+        x.insertCell(0).innerHTML=List[n].SN;
+        x.insertCell(1).innerHTML=List[n].Trade;
+        x.insertCell(2).innerHTML="铁路";
+        x.insertCell(3).innerHTML="船舶";
+        x.insertCell(4).innerHTML=List[n].BillOfLadingNumber;
+        x.insertCell(5).innerHTML=List[n].UnloadingPort;
+        x.insertCell(6).innerHTML=List[n].DestinationPort;
+        x.insertCell(7).innerHTML=List[n].LoadingPort;
+        x.insertCell(8).innerHTML=List[n].Size;
+        x.insertCell(9).innerHTML=List[n].BayNo;
+        x.insertCell(10).innerHTML=List[n].CarNum;
+        x.insertCell(11).innerHTML=List[n].SX;
+        if(List[n].CarNum != "null"){
+            x.style.backgroundColor = "#56a3f7";
+        }
+    }
+    function clcTab() {
+        var cTab = document.getElementById("t2");
+        var rowNum=cTab.rows.length;
+        for(var i=1;i<rowNum;i++){
+            cTab.deleteRow(i);
+            rowNum --;
+            i--;
+        }
+    }
+    for(var i=choCarNumInt+1;i<8;i++){
+        var carStr = "hc"+i;
+        document.getElementById(carStr).style.backgroundColor="gray";
+    }
+</script>
+<script src="jquery-3.3.1.js"></script>
+<script>
+    function biaogekz(s){
+        $(function(){
+            s="#";
+            for(var i =1;i<11;i++){
+                if(i<=9){s = s+"0";}
+                s = s+i;
+                for(var j=1;j<8;j++){/////////////////////////////////////////////////////////////////////////////////////////////
+                    s=s+j;
+                    $(s).html("");
+                    s=s+"a";
+                    if(i!=1)$(s).hide();
+                    s = s.substring(0,3);
+                }
+                s = "#";
+            }
+        });
+    }
+
+    $(function(){
+        s="#";
+        for(var i =2;i<11;i++){
+            if(i<=9){s = s+"0";}
+            s = s+i;
+            for(var j=1;j<8;j++){/////////////////////////////////////////////////////////////////////////////////////////////
+                s=s+j+"a";
+                $(s).hide();
+                s = s.substring(0,3);
+            }
+            s = "#";
+        }
+    });
+    biaogekz("a");
+    $(function(){
+        var ss="#";
+        var jishu=0;
+        var is40=false;
+        for(var i =1;i<11;i++){
+            if(i<=9){ss = ss+"0";}
+            ss = ss+i;
+            for(var j=1;j<choCarNumInt+1;j++){/////////////////////////////////////////////////////////////////////////////////////////////
+                ss=ss+j+"a";
+                $(ss).click(function(){
+                    var val=$(this).attr("id");
+                    var vals = "#"+val;
+                    var vals1 = vals.substring(0,2)+changeNum(vals.charAt(2),1,"+")+vals.charAt(3);//no last a
+                    var vals2 = vals.substring(0,2)+changeNum(vals.charAt(2),2,"+")+vals.charAt(3);//no last a
+                    for(var i=0;i<list.length;i++){
+                        if(list[i].BayNo==beiwei)
+                            var sbei="";
+                        switch (beiwei.charAt(8)) {
+                            case "6":
+                                canFp=true;
+                                break;
+                            case "5":
+                                sbei = beiwei.substring(0,8)+"6";
+                                for(var j = 0;j<list.length;j++){
+                                    if(list[j].BayNo==sbei){
+                                        if(list[j].CarNum!="null"){
+                                            canFp=true;
+                                        }
+                                    }else{
+                                        jishu++;
+                                    }
+                                }
+                                if(jishu==list.length){
+                                    canFp=true;
+                                }
+                                break;
+                            case "4":
+                                sbei = beiwei.substring(0,8)+"5";
+                                for(var j = 0;j<list.length;j++){
+                                    if(list[j].BayNo==sbei){
+                                        if(list[j].CarNum!="null"){
+                                            canFp=true;
+                                        }
+                                    }else{
+                                        jishu++;
+                                    }
+                                }
+                                if(jishu==list.length){
+                                    canFp=true;
+                                }
+                                break;
+                            case "3":
+                                sbei = beiwei.substring(0,8)+"4";
+                                for(var j = 0;j<list.length;j++){
+                                    if(list[j].BayNo==sbei){
+                                        if(list[j].CarNum!="null"){
+                                            canFp=true;
+                                        }
+                                    }else{
+                                        jishu++;
+                                    }
+                                }
+                                if(jishu==list.length){
+                                    canFp=true;
+                                }
+                                break;
+                            case "2":
+                                sbei = beiwei.substring(0,8)+"3";
+                                for(var j = 0;j<list.length;j++){
+                                    if(list[j].BayNo==sbei){
+                                        if(list[j].CarNum!="null"){
+                                            canFp=true;
+                                        }
+                                    }else{
+                                        jishu++;
+                                    }
+                                }
+                                if(jishu==list.length){
+                                    canFp=true;
+                                }
+                                break;
+                            case "1":
+                                sbei = beiwei.substring(0,8)+"2";
+                                for(var j = 0;j<list.length;j++){
+                                    if(list[j].BayNo==sbei){
+                                        if(list[j].CarNum!="null"){
+                                            canFp=true;
+                                        }
+                                    }else{
+                                        jishu++;
+                                    }
+                                }
+                                if(jishu==list.length){
+                                    canFp=true;
+                                }
+                                break;
+                            default:break;
+                        }
+                    }
+                    jishu=0;
+                    if(canFp){
+                        if(ls==11||ls==13){
+                            is40=true;
+                        }else{
+                            is40=true;
+                        }
+                        if(is40){
+                            if($(vals).html() == "+"){
+                                if(first){
+                                    $(vals).html("-");
+                                    $(vals.substring(0,4)).html(beiwei);
+                                    $(vals1+"a").show();
+                                    for(var i=0;i<list.length;i++){
+                                        if(list[i].BayNo==beiwei){
+                                            list[i].CarNum = vals.charAt(3)+"号车";
+                                            sxNum++;
+                                            list[i].SX = sxNum;
+                                        }
+                                    }
+                                    // var stab = beiwei.charAt(3)+beiwei.charAt(4)+"0"+beiwei.charAt(8);
+                                    // document.getElementById(stab).style.backgroundColor="#5ef746";
+                                    first=false;
+                                }else {
+                                    alert("当前集装箱已经被分配！");
+                                }
+                            }else{
+                                $(vals).html("+");
+                                var Sbay=$(vals.substring(0,4)).html();
+                                beiwei = Sbay;
+                                $(vals.substring(0,4)).html("");
+                                var valss=vals.replace(vals.charAt(2),changeNum(vals.charAt(2)));
+                                // alert(valss.substring(0,4));
+                                if($(valss.substring(0,4)).html() == ""){
+                                    $(valss).hide();
+                                }
+                                var stab = beiwei.charAt(3)+beiwei.charAt(4)+"0"+beiwei.charAt(8);
+                                document.getElementById(stab).style.backgroundColor="yellow";
+                                for(var i=0;i<list.length;i++){
+                                    if(list[i].BayNo==beiwei){
+                                        list[i].CarNum = "null";
+                                        list[i].SX = 0;
+                                        sxNum--;
+                                    }
+                                }
+                            }
+                            clcTab();
+                            for(var i=0;i<list.length;i++){
+                                insRow(list,i,"t2");
+                            }
+                            canFp=false;
+                        }else{
+                            if($(vals).html() == "+"){
+                                if(first){
+                                    $(vals).html("-");
+                                    $(vals1+"a").html("-");
+                                    $(vals.substring(0,4)).html(beiwei);
+                                    $(vals1).html(beiwei.substring(0,8)+changeNum(beiwei.charAt(8),1,"-"));
+                                    $(vals1+"a").show();
+                                    $(vals2+"a").show();
+                                    for(var i=0;i<list.length;i++){
+                                        if(list[i].BayNo==beiwei){
+                                            list[i].CarNum = vals.charAt(3)+"号车";
+                                            sxNum++;
+                                            list[i].SX = sxNum;
+                                        }
+                                    }
+                                    var nestBei =beiwei.substring(0,8)+changeNum(beiwei.charAt(8),1,"-");
+                                    for(var i=0;i<list.length;i++){
+                                        if(list[i].BayNo==nestBei){
+                                            list[i].CarNum = vals.charAt(3)+"号车";
+                                            list[i].SX = sxNum;
+                                        }
+                                    }
+                                    // var stab = beiwei.charAt(3)+beiwei.charAt(4)+"0"+beiwei.charAt(8);
+                                    // document.getElementById(stab).style.backgroundColor="#5ef746";
+                                    first=false;
+                                }else {
+                                    alert("当前集装箱已经被分配！");
+                                }
+                            }else{
+                                $(vals).html("+");
+                                var Sbay=$(vals.substring(0,4)).html();
+                                beiwei = Sbay;
+                                $(vals.substring(0,4)).html("");
+                                var valss=vals.replace(vals.charAt(2),changeNum(vals.charAt(2),1,"+"));
+                                // alert(valss.substring(0,4));
+                                if($(valss.substring(0,4)).html() == ""){
+                                    $(valss).hide();
+                                }
+                                var stab = beiwei.charAt(3)+beiwei.charAt(4)+"0"+beiwei.charAt(8);
+                                document.getElementById(stab).style.backgroundColor="yellow";
+                                for(var i=0;i<list.length;i++){
+                                    if(list[i].BayNo==beiwei){
+                                        list[i].CarNum = "null";
+                                        list[i].SX = 0;
+                                        sxNum--;
+                                    }
+                                }
+                            }
+                            clcTab();
+                            for(var i=0;i<list.length;i++){
+                                insRow(list,i,"t2");
+                            }
+                            canFp=false;
+                        }
+                        // if($(vals).html() == "+"){
+                        //     if(first){
+                        //         $(vals).html("-");
+                        //         $(vals.substring(0,4)).html(beiwei);
+                        //         for(var i=0;i<list.length;i++){
+                        //             if(list[i].BayNo==beiwei){
+                        //                 list[i].CarNum = vals.charAt(3)+"号车";
+                        //                 sxNum++;
+                        //                 list[i].SX = sxNum;
+                        //             }
+                        //         }
+                        //         // var stab = beiwei.charAt(3)+beiwei.charAt(4)+"0"+beiwei.charAt(8);
+                        //         // document.getElementById(stab).style.backgroundColor="#5ef746";
+                        //         var valss=vals.replace(vals.charAt(2),changeNum(vals.charAt(2)));
+                        //         $(valss).show();
+                        //         first=false;
+                        //     }else {
+                        //         alert("当前集装箱已经被分配！");
+                        //     }
+                        //
+                        // }else{
+                        //     $(vals).html("+");
+                        //     var Sbay=$(vals.substring(0,4)).html();
+                        //     beiwei = Sbay;
+                        //     $(vals.substring(0,4)).html("");
+                        //     var valss=vals.replace(vals.charAt(2),changeNum(vals.charAt(2)));
+                        //     alert(valss.substring(0,4));
+                        //     if($(valss.substring(0,4)).html() == ""){
+                        //         $(valss).hide();
+                        //     }
+                        //     var stab = beiwei.charAt(3)+beiwei.charAt(4)+"0"+beiwei.charAt(8);
+                        //     document.getElementById(stab).style.backgroundColor="yellow";
+                        //     for(var i=0;i<list.length;i++){
+                        //         if(list[i].BayNo==beiwei){
+                        //             list[i].CarNum = "null";
+                        //             list[i].SX = 0;
+                        //             sxNum--;
+                        //         }
+                        //     }
+                        // }
+                        // clcTab();
+                        // for(var i=0;i<list.length;i++){
+                        //     insRow(list,i,"t2");
+                        // }
+                        // canFp=false;
+                    }else {
+                        alert("请先分配这个集装箱上层的集装箱！");
+                        var dqid = beiwei.substring(3,5)+beiwei.substring(7,9);
+                        if(is40){
+                            document.getElementById(dqid).style.backgroundColor="yellow";
+                        }else{
+                            document.getElementById(dqid).style.backgroundColor="yellow";
+                            document.getElementById(dqid.substring(0,3)+changeNum(dqid.charAt(3),1,"-")).style.backgroundColor="yellow";
+                        }
+                    }
+                });
+                ss = ss.substring(0,3);
+            }
+            for(var k =choCarNumInt+1;k<8;k++){
+                ss=ss+k+"a";
+                $(ss).click(function(){
+                    alert("请选择1号至"+choCarNumInt+"号车!");
+                });
+                ss = ss.substring(0,3);
+            }
+            ss = "#";
+        }
+    });
+    function changeNum1(c){
+        var i = parseInt(c)-1;
+        var cc = i.toString();
+        alert(typeof (cc));
+        alert(cc);
+        return cc;
+    }
+    function changeNum(c,n,fh){
+        if(fh=="+"){
+            var i = parseInt(c)+n;
+            var cc = i.toString();
+        }
+        if(fh=="-"){
+            var i = parseInt(c)-n;
+            var cc = i.toString();
+        }
+        return cc;
+    }
+</script>
+</body>
+</html>

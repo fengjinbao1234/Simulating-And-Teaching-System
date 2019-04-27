@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>港口铁水联运仿真</title>
+    <script type="text/javascript" src="js/three.js"></script>
+    <script type="text/javascript" src="js/myDefined.js"></script>
+    <script src="jquery-3.3.1.js"></script>
+    <script src="xlsx.core.min.js"></script>
+    <style>
+        /*body{*/
+            /*background-color: #c0dbf7;*/
+        /*}*/
+        #tab{
+            margin-top: -50px;
+            border-collapse: collapse;
+        }
+        #tab td{
+             border: 1px solid #000000;
+             width: 50%;
+             height: 25px;
+             text-align: center;
+         }
+        td{
+            text-align: center;
+            font-size: 15px;
+            user-select: none;
+        }
+        #xm{
+            line-height: 90px;
+        }
+        div.tw{
+            text-align: center;
+        }
+        #d{
+            margin-top:10%;
+        }
+        div.xx{
+            line-height:100px;
+        }
+        div.selectBox{
+            display: none;
+            position:fixed;
+            top:10%;
+            left:20%;
+            width:60%;
+            height:80%;
+            border:3px solid rgb(81, 180, 255);
+            background-color:white;
+            z-index:1002
+        }
+        div.selectBoxEqu{
+            display: none;
+            position:fixed;
+            top:20%;
+            left:37%;
+            width:600px;
+            height:500px;
+            border:3px solid rgb(81, 180, 255);
+            background-color:white;
+            z-index:1002
+        }
+        div.selectBoxTask{
+            display: none;
+            position:fixed;
+            top:20%;
+            left:37%;
+            width:600px;
+            height:500px;
+            border:3px solid rgb(81, 180, 255);
+            background-color:white;
+            z-index:1002
+        }
+        div.selectBoxTq{
+            display: none;
+            position:fixed;
+            top:30%;
+            left:40%;
+            width:400px;
+            height:300px;
+            border:3px solid rgb(81, 180, 255);
+            background-color:white;
+            z-index:1002
+        }
+        div.selectBoxTrain{
+            display: none;
+            position:fixed;
+            top:30%;
+            left:40%;
+            width:400px;
+            height:300px;
+            border:3px solid rgb(81, 180, 255);
+            background-color:white;
+            z-index:1002
+        }
+        div.selectBoxShip{
+            display: none;
+            position:fixed;
+            top:30%;
+            left:40%;
+            width:400px;
+            height:300px;
+            border:3px solid rgb(81, 180, 255);
+            background-color:white;
+            z-index:1002
+        }
+        div.selectBoxTable{
+            display: none;
+            position:fixed;
+            top:10%;
+            left:15%;
+            width:70%;
+            height:80%;
+            overflow:scroll;
+            overflow-x:hidden;
+            border:3px solid rgb(81, 180, 255);
+            background-color:white;
+            z-index:1002
+        }
+        div.shelter{
+            display:none;
+            position:fixed;
+            top:0px;
+            left:0px;
+            width:100%;
+            height:100%;
+            background-color: #ffffff;
+            opacity:0.5;
+            z-index:1001
+        }
+        #zc{
+            border-spacing: 1px;
+            empty-cells: hide;
+        }
+        #zc th{
+            min-width: 30px;
+            height: 20px;
+            text-align: center;
+            font-size: 15px;
+            user-select: none;
+        }
+        #zc td{
+            border: 0.5px solid #000000;
+            min-width: 30px;
+            height: 20px;
+            text-align: center;
+            font-size: 15px;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+<div id="d">
+    <table id="tab" width=80% align="center">
+        <tr>
+            <td rowspan="4" >
+                <div>
+                    <img src="hsxg.png" onclick="tiaoQj()">
+                    <br>
+                    <img src="铁水联运logo.png">
+                </div>
+            </td>
+            <td><div id="xm">
+                <span>姓名 ：小铁</span>
+                <span>学号 ：123</span>
+            </div></td>
+        </tr>
+        <tr>
+            <td>
+                <div class="tw">
+                    <img src="港口.jpg" width="90" height="90" onclick="CA()">
+                    <p onclick="CA()">实验展示</p>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="tw">
+                    <img src="设备.jpg" width="90" height="90" onclick="Equipments()">
+                    <p onclick="Equipments()">设备库</p>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="tw">
+                    <img src="任务.jpg" width="90" height="90" onclick="Task()">
+                    <p onclick="Task()"> 任务</p>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+<div id="selectBox" class="selectBox">
+    <!--点击集装箱弹出的窗口-->
+    <table style="width: 100%;height: 100%">
+        <tr>
+            <th colspan="6">
+                明天天气预报
+            </th>
+        </tr>
+        <tr>
+            <td>
+                <div class="xx" align="center">
+                    <p>时间：</p>
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <p>00:00-06:59</p>
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <p>07:00-11:59</p>
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <p>12:00-14:59</p>
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <p>15:00-18:59</p>
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <p>19:00-23:59</p>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="xx" align="center">
+                    <p>天气：</p>
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <p>阴（18℃）</p>
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <p>阴（19℃）</p>
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <p>晴（23℃）</p>
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <p>阴（25℃）</p>
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <p>阴（20℃）</p>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th colspan="6">
+                列车信息
+            </th>
+        </tr>
+        <tr>
+            <td>
+                <div>
+                    裁量：
+                </div>
+            </td>
+            <td>
+                <div>
+                    <input type="text" value="0-100TEU" style="width: 80px">
+                </div>
+            </td>
+            <td>
+                <div>
+                    到达时间：
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    12:00-14:59
+                </div>
+            </td>
+            <td>
+                <div>
+                    集装箱信息导入：
+                </div>
+            </td>
+            <td>
+                <div>
+                    <input type="file" id="excel-file" style="width: 200px">
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th colspan="6">
+                船舶信息
+            </th>
+        </tr>
+        <tr>
+            <td colspan="2" align="center">
+                <p onclick="okShip(1)">泛亚洋山 B293E</p>
+            </td>
+            <td colspan="2" align="center">
+                <p onclick="okShip(2)">天海1号 1818W</p>
+            </td>
+            <td colspan="2" align="center">
+                <p onclick="okShip(3)">泛亚洋山 B292W</p>
+            </td>
+        </tr>
+        <tr>
+            <th colspan="6">
+                堆场信息
+            </th>
+        </tr>
+        <tr>
+            <td colspan="3" align="center">
+                <p onclick="okShip(5)">点击查看堆场详细</p>
+            </td>
+            <td colspan="3" align="center">
+                <p onclick="okShip(4)">点击查看堆场已存放集装箱信息</p>
+            </td>
+        </tr>
+        <tr>
+            <td  colspan="6">
+                <div align="center">
+                    <button onclick="cancel()">取消</button>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+<div id="selectBoxEqu" class="selectBoxEqu">
+    <!--点击集装箱弹出的窗口-->
+    <table style="width: 100%;height: 90%">
+        <tr>
+            <th>序号</th>
+            <th>设备名称</th>
+            <th>设备数量</th>
+            <th>铁路数量</th>
+            <th>数量选择</th>
+            <th>主要技术参数</th>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>门座式起重机</td>
+            <td>2</td>
+            <td></td>
+            <td><input id="inp1" type="text" value="2" style="width: 80px"></td>
+            <td> </td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>桥式抓斗卸船机</td>
+            <td>1</td>
+            <td></td>
+            <td><input id="inp2" type="text" value="1" style="width: 80px"></td>
+            <td> </td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>轨道式集装箱门式起重机</td>
+            <td>1</td>
+            <td>1</td>
+            <td><input id="inp3" type="text" value="1" style="width: 80px"></td>
+            <td> </td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>集装箱堆高机</td>
+            <td>3</td>
+            <td> </td>
+            <td><input id="inp4" type="text" value="3" style="width: 80px"></td>
+            <td> </td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>集装箱叉车</td>
+            <td>4</td>
+            <td>3</td>
+            <td><input id="inp5" type="text" value="4" style="width: 80px"></td>
+            <td> </td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td>正面吊</td>
+            <td>2</td>
+            <td>3</td>
+            <td><input id="inp6" type="text" value="2" style="width: 80px"></td>
+            <td> </td>
+        </tr>
+        <tr>
+            <td>7</td>
+            <td>港内牵引车</td>
+            <td>5</td>
+            <td> </td>
+            <td><input id="inp7" type="text" value="5" style="width: 80px"></td>
+            <td> </td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td>火车到堆场集卡车</td>
+            <td>7</td>
+            <td>2</td>
+            <td><input id="inp8" type="text" value="7" style="width: 80px"></td>
+            <td> </td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td>堆场到船舶集卡车</td>
+            <td>7</td>
+            <td>2</td>
+            <td><input id="inp9" type="text" value="7" style="width: 80px"></td>
+            <td> </td>
+        </tr>
+        <tr>
+            <td colspan="6" >
+                <P align="left">注意：请合理选择需要使用的设备数量，并提交!</P>
+            </td>
+        </tr>
+    </table>
+    <div align="center">
+        <button onclick="send()">提交</button>
+        <button onclick="retu()">返回</button>
+    </div>
+</div>
+<div id="selectBoxTask" class="selectBoxTask">
+    <!--点击集装箱弹出的窗口-->
+    <table style="width: 100%;height: 90%">
+        <tr>
+            <!--<th>任务排序</th>-->
+            <th>任务名称</th>
+            <!--<th>任务操作</th>-->
+            <th>开始任务</th>
+        </tr>
+        <tr>
+            <!--<td>1</td>-->
+            <td>堆箱计划</td>
+            <!--<td><p>点击进入中控室，来到电脑前然后到二维操作界面</p></td>-->
+            <td><img src="start.jpg" width="50" height="50" onclick="task1()"></td>
+            <td  onclick="ReSetList(1)" >重置堆箱计划</td>
+        </tr>
+        <tr>
+            <!--<td>2</td>-->
+            <td>堆箱调度作业</td>
+            <!--<td><p>点击进入中控室，然后到二维操作界面（前面任务未完成时，此任务不能操作）</p></td>-->
+            <td><img src="start.jpg" width="50" height="50" onclick="task2()"></td>
+        </tr>
+        <tr>
+            <!--<td>3</td>-->
+            <td>取箱计划</td>
+            <!--<td><p>点击进入中控室，然后到二维操作界面（前面任务未完成时，此任务不能操作）</p></td>-->
+            <td><img src="start.jpg" width="50" height="50" onclick="task3()"></td>
+            <td onclick="ReSetList(2)">重置堆箱计划</td>
+        </tr>
+        <tr>
+            <!--<td>4</td>-->
+            <td>取箱调度作业</td>
+            <!--<td><p>点击进入中控室，然后到二维操作界面（前面任务未完成时，此任务不能操作）</p></td>-->
+            <td><img src="start.jpg" width="50" height="50" onclick="task4()"></td>
+        </tr>
+    </table>
+    <div align="center">
+        <button onclick="retu2()">返回</button>
+    </div>
+</div>
+<div id="selectBoxTq" class="selectBoxTq">
+    <!--点击集装箱弹出的窗口-->
+    <table style="width: 100%;height: 80%">
+        <tr>
+            <td>
+                <div>
+                    温度：
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <select name="tem">
+                        <option value="1">-10℃--10℃</option>
+                        <option value="2">10℃--20℃</option>
+                        <option value="3">20℃--30℃</option>
+                        <option value="4">30℃--45℃</option>
+                    </select>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div>
+                    天气类别：
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <select name="types">
+                        <option value="1">晴</option>
+                        <option value="2">阴</option>
+                        <option value="3">雨（小中大暴）</option>
+                        <option value="4">雪（小中大暴）</option>
+                        <option value="4">雾（小中大）</option>
+                    </select>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <div align="center">
+        <button onclick="okTq()">确定</button>
+    </div>
+</div>
+<div id="selectBoxTrain" class="selectBoxTrain">
+    <!--点击集装箱弹出的窗口-->
+    <table style="width: 100%;height: 80%">
+        <tr>
+            <td>
+                <div>
+                    裁量：
+                </div>
+            </td>
+            <td>
+                <div>
+                    <input type="text" value="0-100TEU">
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div>
+                    到达时间：
+                </div>
+            </td>
+            <td>
+                <div class="xx" align="center">
+                    <select name="types">
+                        <option value="1">07:00-11:59</option>
+                        <option value="2">12:00-14:59</option>
+                        <option value="3">15:00-18:59</option>
+                        <option value="4">15:00-18:59</option>
+                        <option value="5">00:00-06:59</option>
+                    </select>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div>
+                    集装箱信息导入：
+                </div>
+            </td>
+            <td>
+                <div>
+                    <input type="file" id="excel-file222">
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td onclick="jzxShow()">
+                集装箱信息查看
+            </td>
+        </tr>
+    </table>
+    <div align="center">
+        <button onclick="okTrain()">确定</button>
+    </div>
+</div>
+<div id="selectBoxShip" class="selectBoxShip">
+    <!--点击集装箱弹出的窗口-->
+    <table style="width: 100%;height: 80%">
+        <tr>
+            <td>
+                <div class="xx" align="center">
+                    <select name="ship">
+                        <option value="1">泛亚洋山 B293E</option>
+                        <option value="2">天海1号-1818W</option>
+                        <option value="3">泛亚洋山 B292W</option>
+                    </select>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <div align="center">
+        <button onclick="okShip()">确定</button>
+        <button onclick="returnShip()">返回</button>
+    </div>
+</div>
+<div id="selectBoxTable" class="selectBoxTable">
+    <table id="zc" width="100%" height="90%" align="center">
+        <tr>
+            <th id="ti" colspan="13">列车卸载清单</th>
+        </tr>
+        <tr>
+            <th id="ta1" colspan="3">到站日期：</th>
+            <th id="ta2" colspan="3">2018年11月1日上午9：00</th>
+            <th id="tb1" colspan="3"></th>
+            <th id="tb2" colspan="4"></th>
+        </tr>
+        <tr>
+            <th>编号</th>
+            <th>提单号</th>
+            <th>箱号</th>
+            <th>空重</th>
+            <th>尺寸</th>
+            <th>类型</th>
+            <th>箱公司</th>
+            <th>铅封号</th>
+            <th>内外贸</th>
+            <th>毛重</th>
+            <th>装货港</th>
+            <th>目的港</th>
+            <th>卸货港</th>
+            <th>贝位</th>
+        </tr>
+        <tbody id="tboby" ></tbody>
+    </table>
+    <div align="center">
+        <button onclick="returnTable()" >返回</button>
+    </div>
+</div>
+<div id="shelter" class="shelter"></div>
+<script>
+    function CA() {
+        document.getElementById("selectBox").style.display = "block";
+        document.getElementById("shelter").style.display = "block";
+    }
+    function Equipments() {
+        document.getElementById("selectBoxEqu").style.display = "block";
+        document.getElementById("shelter").style.display = "block";
+    }
+    function Task() {
+        document.getElementById("selectBoxTask").style.display = "block";
+        document.getElementById("shelter").style.display = "block";
+    }
+    //取消弹框
+    function cancel() {
+        document.getElementById("selectBox").style.display = "none";
+        document.getElementById("shelter").style.display = "none";
+    }
+    function retu() {
+        document.getElementById("selectBoxEqu").style.display = "none";
+        document.getElementById("shelter").style.display = "none";
+    }
+    function retu2() {
+        document.getElementById("selectBoxTask").style.display = "none";
+        document.getElementById("shelter").style.display = "none";
+    }
+    function ok() {
+        var v=document.getElementsByName("al")[0].value;
+        switch (v) {
+            case "1":
+                document.getElementById("selectBoxTq").style.display = "block";
+                document.getElementById("selectBox").style.display = "none";
+                break;
+            case "2":
+                document.getElementById("selectBoxTrain").style.display = "block";
+                document.getElementById("selectBox").style.display = "none";
+                break;
+            case "3":
+                document.getElementById("selectBoxShip").style.display = "block";
+                document.getElementById("selectBox").style.display = "none";
+                break;
+            case "4":
+                location.href = './yardChoose.html';
+                break;
+            default:break;
+        }
+    }
+    function okTq() {
+        document.getElementById("selectBoxTq").style.display = "none";
+        document.getElementById("selectBox").style.display = "block";
+    }
+    function okTrain() {
+        document.getElementById("selectBoxTrain").style.display = "none";
+        document.getElementById("selectBox").style.display = "block";
+    }
+    function jzxShow(){
+        isTrain = true;
+        // document.getElementById("selectBoxTrain").style.display = "none";
+        document.getElementById("selectBoxTable").style.display = "block";
+        for(var i=0;i<ContainerList[0].length;i++){
+            insRow(ContainerList[0],i);
+        }
+    }
+    function ReSetList(r) {
+        if(r==1){
+            alert("已重置堆箱计划");
+            localStorage.setItem("time1","0");
+            localStorage.removeItem("text");
+            localStorage.removeItem("text1");
+            localStorage.setItem("InitContainers",InitgareenText);
+        }else {
+            alert("已重置取箱计划");
+            localStorage.setItem("time2","0");
+            localStorage.removeItem("textChoose");
+        }
+    }
+    function send() {
+        var inpt1 = document.getElementById("inp1").value;
+        var inpt2 = document.getElementById("inp2").value;
+        var inpt3 = document.getElementById("inp3").value;
+        var inpt4 = document.getElementById("inp4").value;
+        var inpt5 = document.getElementById("inp5").value;
+        var inpt6 = document.getElementById("inp6").value;
+        var inpt7 = document.getElementById("inp7").value;
+        var inpt8 = document.getElementById("inp8").value;
+        localStorage.jika = inpt7;
+        localStorage.jika2 = inpt8;
+        localStorage.anqiao = inpt1;
+        alert("提交成功");
+    }
+    function okShip(v) {
+        isTrain = false;
+        switch (v) {
+            case 1:
+                document.getElementById("selectBoxTable").style.display = "block";
+                // document.getElementById("selectBoxShip").style.display = "none";
+                clcTab();
+                document.getElementById("ti").innerText="出口装船清单";
+                document.getElementById("ta1").innerText="船名、航次:";
+                document.getElementById("ta2").innerText="泛亚洋山 B293E";
+                document.getElementById("tb1").innerText="到港日期：";
+                document.getElementById("tb2").innerText="2018年11月1日下午22：00";
+                for(var i=0;i<ContainerList[1].length;i++){
+                    insRow(ContainerList[1],i);
+                }
+                break;
+            case 2:
+                document.getElementById("selectBoxTable").style.display = "block";
+                // document.getElementById("selectBoxShip").style.display = "none";
+                clcTab();
+                document.getElementById("ti").innerText="出口装船清单";
+                document.getElementById("ta1").innerText="船名、航次:";
+                document.getElementById("ta2").innerText="天海1号-1818W";
+                document.getElementById("tb1").innerText="到港日期：";
+                document.getElementById("tb2").innerText="2018年11月1日上午9：30";
+                for(var i=0;i<ContainerList[2].length;i++){
+                    insRow(ContainerList[2],i);
+                }
+                break;
+            case 3:
+                document.getElementById("selectBoxTable").style.display = "block";
+                // document.getElementById("selectBoxShip").style.display = "none";
+                clcTab();
+                document.getElementById("ti").innerText="出口装船清单";
+                document.getElementById("ta1").innerText="船名、航次:";
+                document.getElementById("ta2").innerText="泛亚洋山 B292W";
+                document.getElementById("tb1").innerText="到港日期：";
+                document.getElementById("tb2").innerText="2018年11月1日上午17：00";
+                for(var i=0;i<ContainerList[2].length;i++){
+                    insRow(ContainerList[3],i);
+                }
+                break;
+            case 4:
+                document.getElementById("selectBoxTable").style.display = "block";
+                // document.getElementById("selectBoxShip").style.display = "none";
+                clcTab();
+                document.getElementById("ti").innerText="堆场集装箱信息";
+                document.getElementById("ta1").innerText="";
+                document.getElementById("ta2").innerText="";
+                document.getElementById("tb1").innerText="";
+                document.getElementById("tb2").innerText="";
+                for(var i=0;i<InitContainerList.length;i++){
+                    insRow(InitContainerList,i);
+                }
+                break;
+            case 5:
+                location.href = './yardChoose.html';
+                break;
+            default:break;
+        }
+    }
+    function returnShip() {
+        document.getElementById("selectBoxShip").style.display = "none";
+        document.getElementById("selectBox").style.display = "block";
+    }
+    function returnTable() {
+
+        if(isTrain){
+            // document.getElementById("selectBoxTrain").style.display = "block";
+            document.getElementById("selectBoxTable").style.display = "none";
+        }else {
+            // document.getElementById("selectBoxShip").style.display = "block";
+            document.getElementById("selectBoxTable").style.display = "none";
+        }
+    }
+    function tiaoQj() {
+        location.href = './初始首页全景.html';
+    }
+    function task1() {
+        localStorage.setItem("time1","0");
+        location.href = './test.html';
+        // location.href = './中控室动画计划员.html'+"?task1";
+    }
+    function task2() {
+        location.href = './test2.html';
+    }
+    function task3() {
+        localStorage.setItem("time2","0");
+        location.href = './testChoose2.html';
+        // location.href = './中控室动画计划员.html'+"?task3";
+    }
+    function task4() {
+        location.href = './test3.html';
+    }
+
+    //初始化集装箱
+    ContainTruckSchedule();
+    console.log(InitContainerList);
+    var InitgareenText=JSON.stringify(InitContainerList);
+    //通过localStorage传递
+    // localStorage.setItem("InitContainers",InitgareenText);
+    var isTrain = true;
+    var ContainerList = new Array();
+    ContainerList[0] = new Array(); //集装箱数组
+    ContainerList[1] = new Array(); //集装箱数组
+    ContainerList[2] = new Array(); //集装箱数组
+    ContainerList[3] = new Array(); //集装箱数组
+    $('#excel-file').change(function(e) {
+        var files = e.target.files;
+        var fileReader = new FileReader();
+        fileReader.onload = function(ev) {
+            try {
+                var data = ev.target.result,
+                    workbook = XLSX.read(data, {
+                        type: 'binary'
+                    }),
+                    initContainer = []; // 存储获取到的数据
+                    initContainer[0]=[];
+                    initContainer[1]=[];
+                    initContainer[2]=[];
+                initContainer[3]=[];
+            } catch (e) {
+                console.log('文件类型不正确');
+                return;
+            }
+            // 表格的表格范围，可用于判断表头是否数量是否正确
+            var fromTo = '';
+            // 遍历每张表读取
+            var num=0;
+            for (var sheet in workbook.Sheets) {
+                if (workbook.Sheets.hasOwnProperty(sheet)) {
+                    fromTo = workbook.Sheets[sheet]['!ref'];
+                    initContainer[num] = initContainer[num].concat(XLSX.utils.sheet_to_json(workbook.Sheets[sheet]));
+                    num++;
+                }
+            }
+            for(var i=0;i<initContainer.length;i++){
+                for(var j=0;j<initContainer[i].length;j++){
+                    ContainerList[i][j]= new THREE.Container();
+                    ContainerList[i][j].SN = initContainer[i][j].SN;
+                    ContainerList[i][j].BillOfLadingNumber = initContainer[i][j].BillOfLadingNumber;
+                    ContainerList[i][j].ContainerNumber = initContainer[i][j].ContainerNumber;
+                    ContainerList[i][j].EmptyOrheavyContainer = initContainer[i][j].EmptyOrheavyContainer;
+                    ContainerList[i][j].Size = initContainer[i][j].Size;
+                    ContainerList[i][j].Types = initContainer[i][j].Types;
+                    ContainerList[i][j].ContainerCompany = initContainer[i][j].ContainerCompany;
+                    ContainerList[i][j].SealNum = initContainer[i][j].SealNum;
+                    ContainerList[i][j].Trade = initContainer[i][j].Trade;
+                    ContainerList[i][j].Weight = initContainer[i][j].Weight;
+                    ContainerList[i][j].LoadingPort = initContainer[i][j].LoadingPort;
+                    ContainerList[i][j].DestinationPort = initContainer[i][j].DestinationPort;
+                    ContainerList[i][j].UnloadingPort = initContainer[i][j].UnloadingPort;
+                    ContainerList[i][j].BayNo = "null";
+                    switch (j%3){
+                        case 0:
+                            ContainerList[i][j].Colors = "Red";
+                            break;
+                        case 1:
+                            ContainerList[i][j].Colors = "Green";
+                            break;
+                        case 2:
+                            ContainerList[i][j].Colors = "Blue";
+                            break;
+                        default :
+                            break;
+                    }
+                }
+            }
+            console.log(ContainerList);
+            for(var i=0;i<ContainerList.length;i++){
+                var gareenText=JSON.stringify(ContainerList[i]);
+                //通过localStorage传递
+                localStorage.setItem("Containers"+i,gareenText);
+            }
+            console.log(initContainer);
+            localStorage.setItem("InitContainers",InitgareenText);
+            jzxShow();
+        };
+        // 以二进制方式打开文件
+        fileReader.readAsBinaryString(files[0]);
+    });
+    function insRow(List,n) {
+        var x=document.getElementById('zc').insertRow(n+3);
+        x.insertCell(0).innerHTML=List[n].SN;
+        x.insertCell(1).innerHTML=List[n].BillOfLadingNumber;
+        x.insertCell(2).innerHTML=List[n].ContainerNumber;
+        x.insertCell(3).innerHTML=List[n].EmptyOrheavyContainer;
+        x.insertCell(4).innerHTML=List[n].Size;
+        x.insertCell(5).innerHTML=List[n].Types;
+        x.insertCell(6).innerHTML=List[n].ContainerCompany;
+        x.insertCell(7).innerHTML=List[n].SealNum;
+        x.insertCell(8).innerHTML=List[n].Trade;
+        x.insertCell(9).innerHTML=List[n].Weight;
+        x.insertCell(10).innerHTML=List[n].LoadingPort;
+        x.insertCell(11).innerHTML=List[n].DestinationPort;
+        x.insertCell(12).innerHTML=List[n].UnloadingPort;
+        x.insertCell(13).innerHTML=List[n].BayNo;
+    }
+    function clcTab() {
+        var cTab = document.getElementById("zc");
+        var rowNum=cTab.rows.length;
+        for(var i=3;i<rowNum;i++){
+            cTab.deleteRow(i);
+            rowNum --;
+            i--;
+        }
+    }
+</script>
+</body>
+</html>

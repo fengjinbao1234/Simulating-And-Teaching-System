@@ -1,0 +1,27 @@
+<link href="css/layerModel.css" type="text/css" rel="stylesheet">
+ <script type="text/javascript" src="js/jquery.layerModel.js"></script><script type="text/javascript">$(function(){ $("#demoBtn1").click(function(){      $('#demo1').layerModel({ blurClose : true });    });
+}）;
+
+<a href="#" id="demoBtn1"  class="run">
+ <img    src="img/three-video2.png">
+        <span class="over-text"  style="float:left;width:90%;">案例视频影视官网2.0</span>     </a>
+<!--弹出视频的代码-->
+ <div id="demo1" class="gpc-t-box">
+   <div class="gpc-video-t">
+      <embed allowscriptaccess="always" allownetworking="all" allowfullscreen="true" width="670" height="377" type="application/x-shockwave-flash" src="http://cloud.video.taobao.com/play/u/2182797685/p/1/e/1/t/7/38483233.swf">
+         </embed>
+           </div>
+               <div class="gpc-video-t1">
+                     <div class="gpc-video-t1-lf">
+                              <h2 class="gpc-video-t1-lf-1">案例视频影视官网</h2>
+                              <span class="gpc-video-t1-lf-2"><img src="img/read.png" />17502</span>
+                                 </div>
+                                         <div class="gpc-video-t1-rt">
+                                                     <span>￥15,000</span>起
+                                                                </div>
+                                                                   </div>
+                                                                      <div class="gpc-video-t2">
+                                                                                    <div class="gpc-video-t2-lf">
+                                           <p class="gpc-a1-8"><a href="#">来来</a>
+                                            <a href="#">发布于</a> <a href="#">2016-06-09</a><a href="#">时长：00:20:00</a>
+                                            </p>                 </div>                 <div class="gpc-video-t2-rt">                   <a class="gpc-a1-9" href="detail.php">查看更多详情>></a>                 </div>                            </div>            </div>            <!--/end-->

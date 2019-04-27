@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>港口铁水联运仿真</title>
+</head>
+<body>
+<table>
+    <tr>
+        <td><img src="火车.PNG" alt="这是注释" width="200" height="100" vspace="100" hspace="20" border="0"></td>
+        <td><img src="轨道式起重机.PNG" alt="这是注释" width="200" height="100" vspace="100" hspace="20" border="0"></td>
+        <td><img src="集卡.PNG" alt="这是注释" width="200" height="100" vspace="100" hspace="20" border="0"></td>
+        <td><img src="流程4堆场.PNG" alt="这是注释" width="200" height="100" vspace="100" hspace="20" border="0"></td>
+        <td><img src="集卡.PNG" alt="这是注释" width="200" height="100" vspace="100" hspace="20" border="0"></td>
+        <td><img src="岸桥.PNG" alt="这是注释" width="200" height="100" vspace="100" hspace="20" border="0"></td>
+
+    </tr>
+    <tr>
+
+        <td>
+            <!--下拉框界面，id为该下拉框在获取值时需要的名称-->
+            <select name="select-test2" id="select-test2" style="position: absolute;left: 600px">
+                <!--下拉框的各个选项value为选择各选项之后的值-->
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td>
+
+            <select name="select-test3" id="select-test3" style="position: absolute;left: 1100px">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+        <td>
+
+            <select name="select-test4" id="select-test4" style="position: absolute;left: 1350px">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </td>
+    </tr>
+    <!--跳转按钮-->
+    <input type="button" name="" value="跳转" align="center" style="position: absolute;left: 700px;top: 500px" onclick="mode1()"/>
+    <script>
+        function mode1() {
+            //由于是一个新的技术，你可以通过下面的代码检测你的浏览器是否支持
+            if (window.localStorage) {
+                //存储变量的值
+                var a2 = document.getElementById("select-test2");
+                var a3 = document.getElementById("select-test3");
+                var a4 = document.getElementById("select-test4");
+                //使用localStorage技术来进行对各个界面的数据传递。将a,a2,a3中的值传到kuayunche1，kuayunche2，anqiao变量中。
+                localStorage.jika = a2.options[a2.selectedIndex].value;
+                localStorage.jika2 = a3.options[a3.selectedIndex].value;
+                localStorage.anqiao = a4.options[a4.selectedIndex].value;
+                localStorage.modelnumber = 3;
+                //进行页面跳转
+                location.href = './test.html';
+            } else {
+                alert("NOT SUPPORT");
+            }
+
+        }
+    </script>
+</table>
+
+
+</body>
+</html>
